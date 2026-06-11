@@ -1,0 +1,226 @@
+[
+  {
+    "slug": "ai-workflow-audit-checklist",
+    "title": "AI Workflow Audit Checklist",
+    "summary": "A step-by-step checklist for SMBs to map their workflows, find high-ROI AI opportunities, and build a realistic implementation roadmap before spending a dollar on tooling.",
+    "url": "https://www.agentpalisade.com/resources/ai-workflow-audit-checklist",
+    "read_time": 6,
+    "key_points": [
+      "Map the current state",
+      "Find and score opportunities",
+      "Assess data, tools, and risk",
+      "Build the roadmap"
+    ],
+    "tags": [
+      "ai",
+      "productivity",
+      "automation",
+      "business"
+    ]
+  },
+  {
+    "slug": "smb-ai-readiness-checklist",
+    "title": "SMB AI Readiness Checklist",
+    "summary": "A practical checklist to gauge whether your team, data, tools, and processes are ready for AI, and what to fix first.",
+    "url": "https://www.agentpalisade.com/resources/smb-ai-readiness-checklist",
+    "read_time": 6,
+    "key_points": [
+      "Use cases",
+      "Data",
+      "Tools",
+      "People",
+      "Governance and budget"
+    ],
+    "tags": [
+      "ai",
+      "productivity",
+      "automation",
+      "business"
+    ]
+  },
+  {
+    "slug": "ai-governance-policy-template",
+    "title": "AI Governance Policy Template",
+    "summary": "A starting-point AI use policy small and mid-sized businesses can adapt: approved tools, acceptable use, data-handling rules, human review, and clear roles.",
+    "url": "https://www.agentpalisade.com/resources/ai-governance-policy-template",
+    "read_time": 6,
+    "key_points": [
+      "Scope & purpose",
+      "Approved tools & access",
+      "Data handling rules",
+      "Human review & accountability",
+      "Roles & responsibilities"
+    ],
+    "tags": [
+      "ai",
+      "productivity",
+      "automation",
+      "business"
+    ]
+  },
+  {
+    "slug": "ai-automation-use-case-library",
+    "title": "AI Automation Use Case Library",
+    "summary": "A working catalog of SMB workflows where AI automation pays off fast, organized by business function, plus how to spot good candidates.",
+    "url": "https://www.agentpalisade.com/resources/ai-automation-use-case-library",
+    "read_time": 6,
+    "key_points": [
+      "Sales & marketing",
+      "Customer support",
+      "Operations & admin",
+      "Finance & back office",
+      "Internal knowledge"
+    ],
+    "tags": [
+      "ai",
+      "productivity",
+      "automation",
+      "business"
+    ]
+  },
+  {
+    "slug": "private-ai-knowledge-assistant-guide",
+    "title": "Private AI Knowledge Assistant Guide",
+    "summary": "What it takes for an SMB to stand up an internal assistant that answers from approved company knowledge, with the retrieval, guardrails, access controls, and maintenance that keep it trustworthy.",
+    "url": "https://www.agentpalisade.com/resources/private-ai-knowledge-assistant-guide",
+    "read_time": 7,
+    "key_points": [
+      "Sources and ingestion",
+      "Grounding and accuracy",
+      "Access and security",
+      "Rollout and maintenance"
+    ],
+    "tags": [
+      "ai",
+      "productivity",
+      "automation",
+      "business"
+    ]
+  },
+  {
+    "slug": "ai-generated-code-security-checklist",
+    "title": "AI-Generated Code Security Checklist",
+    "summary": "Review AI-written code for injection, auth gaps, hardcoded secrets, hallucinated dependencies, and unsafe defaults before you merge.",
+    "url": "https://www.agentpalisade.com/resources/ai-generated-code-security-checklist",
+    "read_time": 5,
+    "key_points": [
+      "Input handling and injection",
+      "Authentication and authorization",
+      "Secrets and configuration",
+      "Dependencies and external APIs",
+      "Cryptography and sensitive data",
+      "Error handling and output"
+    ],
+    "tags": [
+      "ai",
+      "security",
+      "llm",
+      "programming"
+    ]
+  },
+  {
+    "slug": "llm-application-security-checklist",
+    "title": "LLM Application Security Checklist",
+    "summary": "Secure apps that call LLMs: trust boundaries, output validation, data exposure to providers, access control, and cost abuse.",
+    "url": "https://www.agentpalisade.com/resources/llm-application-security-checklist",
+    "read_time": 4,
+    "key_points": [
+      "Trust boundaries",
+      "Input and output validation",
+      "Data exposure and privacy",
+      "Abuse and cost controls",
+      "Access control",
+      "Monitoring"
+    ],
+    "tags": [
+      "ai",
+      "security",
+      "llm",
+      "programming"
+    ]
+  },
+  {
+    "slug": "prompt-injection-review-checklist",
+    "title": "Prompt Injection Review Checklist",
+    "summary": "Defend against direct and indirect prompt injection: prompt construction, untrusted content, output handling, and action gating.",
+    "url": "https://www.agentpalisade.com/resources/prompt-injection-review-checklist",
+    "read_time": 5,
+    "key_points": [
+      "Prompt construction",
+      "Indirect injection from tools, RAG, and the web",
+      "Output handling",
+      "Privilege and action gating",
+      "System prompt protection",
+      "Testing"
+    ],
+    "tags": [
+      "ai",
+      "security",
+      "llm",
+      "programming"
+    ]
+  },
+  {
+    "slug": "rag-security-checklist",
+    "title": "RAG Security Checklist",
+    "summary": "Secure retrieval-augmented generation: ingestion trust, tenant isolation, vector database exposure, and retrieval-time access control.",
+    "url": "https://www.agentpalisade.com/resources/rag-security-checklist",
+    "read_time": 4,
+    "key_points": [
+      "Ingestion pipeline",
+      "Tenant isolation and access control",
+      "Vector database security",
+      "Retrieval and prompt assembly",
+      "Data privacy",
+      "Monitoring"
+    ],
+    "tags": [
+      "ai",
+      "security",
+      "llm",
+      "programming"
+    ]
+  },
+  {
+    "slug": "ai-agent-security-checklist",
+    "title": "AI Agent Security Checklist",
+    "summary": "Constrain tool-using agents: least-privilege tools, sandboxed filesystem and shell, human approval gates, loop limits, and audit logs.",
+    "url": "https://www.agentpalisade.com/resources/ai-agent-security-checklist",
+    "read_time": 4,
+    "key_points": [
+      "Tool permissions and least privilege",
+      "Filesystem and shell access",
+      "Human approval and guardrails",
+      "Loop and resource controls",
+      "Production and data access",
+      "Auditability"
+    ],
+    "tags": [
+      "ai",
+      "security",
+      "llm",
+      "programming"
+    ]
+  },
+  {
+    "slug": "mcp-security-checklist",
+    "title": "MCP Security Checklist",
+    "summary": "Harden Model Context Protocol servers and tools: blast-radius review, authorization, allowlists, mutation gates, and audit logging.",
+    "url": "https://www.agentpalisade.com/resources/mcp-security-checklist",
+    "read_time": 4,
+    "key_points": [
+      "Tool definitions",
+      "Authentication and authorization",
+      "Allowlists and input validation",
+      "Mutation and approval gates",
+      "Supply chain and tool integrity",
+      "Auditing and monitoring"
+    ],
+    "tags": [
+      "ai",
+      "security",
+      "llm",
+      "programming"
+    ]
+  }
+]

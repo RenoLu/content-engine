@@ -1,0 +1,93 @@
+name: Daily content run
+
+on:
+  schedule:
+    # 14:00 UTC every day. Adjust to taste (cron is always UTC).
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Publish mode for this manual run"
+        type: choice
+        options: [dry_run, live]
+        default: dry_run
+      force:
+        description: "Force re-run even if today already ran"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write          # needed to commit the DB + output back to the repo
+
+concurrency:
+  group: daily-content
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      # --- non-secret config (set as repo *Variables*; fall back to safe defaults) ---
+      PUBLISH_MODE: ${{ github.event.inputs.mode || vars.PUBLISH_MODE || 'dry_run' }}
+      AI_PROVIDER: ${{ vars.AI_PROVIDER || 'mock' }}
+      ENABLED_PUBLISHERS: ${{ vars.ENABLED_PUBLISHERS || 'dryrun' }}
+      OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+      ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+      # --- secrets (set as repo *Secrets*). GITHUB_TOKEN falls back to the
+      #     auto-provided Actions token; provide GH_PAT for a higher Search quota. ---
+      GITHUB_TOKEN: ${{ secrets.GH_PAT || github.token }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
+      DEVTO_PUBLISHED: ${{ vars.DEVTO_PUBLISHED || 'false' }}
+      GHOST_ADMIN_API_URL: ${{ secrets.GHOST_ADMIN_API_URL }}
+      GHOST_ADMIN_API_KEY: ${{ secrets.GHOST_ADMIN_API_KEY }}
+      GHOST_POST_STATUS: ${{ vars.GHOST_POST_STATUS || 'draft' }}
+      WORDPRESS_BASE_URL: ${{ secrets.WORDPRESS_BASE_URL }}
+      WORDPRESS_USERNAME: ${{ secrets.WORDPRESS_USERNAME }}
+      WORDPRESS_APP_PASSWORD: ${{ secrets.WORDPRESS_APP_PASSWORD }}
+      WORDPRESS_POST_STATUS: ${{ vars.WORDPRESS_POST_STATUS || 'draft' }}
+      HASHNODE_API_KEY: ${{ secrets.HASHNODE_API_KEY }}
+      HASHNODE_PUBLICATION_ID: ${{ secrets.HASHNODE_PUBLICATION_ID }}
+      BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+      BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+      MASTODON_BASE_URL: ${{ secrets.MASTODON_BASE_URL }}
+      MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+      LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+      LINKEDIN_AUTHOR_URN: ${{ secrets.LINKEDIN_AUTHOR_URN }}
+      LINKEDIN_API_VERSION: ${{ vars.LINKEDIN_API_VERSION }}
+      THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+      THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Run pipeline
+        run: content-engine run ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+
+      - name: Persist run state (DB + artifacts)
+        if: always()
+        run: |
+          git config user.name "content-engine[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data output 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "no state changes to commit"
+          else
+            git commit -m "chore: daily content run $(date -u +%F) [skip ci]"
+            git push
+          fi
+
+      - name: Upload output artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-output
+          path: output/
+          if-no-files-found: ignore

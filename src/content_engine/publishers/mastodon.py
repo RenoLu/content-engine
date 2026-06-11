@@ -1,0 +1,63 @@
+"""Mastodon publisher.
+
+Posts a status via POST {instance}/api/v1/statuses with a bearer access token
+created in the instance's Preferences > Development. Uses an Idempotency-Key so
+retries don't double-post. See docs/API_FINDINGS.md.
+"""
+
+from __future__ import annotations
+
+import hashlib
+
+from ..models import Post, PublishResult
+from .base import BasePublisher
+from .util import microblog_text
+
+_DEFAULT_LIMIT = 500
+
+
+class MastodonPublisher(BasePublisher):
+    name = "mastodon"
+
+    def _base(self) -> str:
+        return self.settings.get_env("MASTODON_BASE_URL").rstrip("/")
+
+    def is_configured(self) -> bool:
+        return bool(self._base()) and bool(self.settings.get_env("MASTODON_ACCESS_TOKEN"))
+
+    def _text(self, post: Post) -> str:
+        return microblog_text(post, _DEFAULT_LIMIT, include_url=True)
+
+    def render_payload(self, post: Post) -> dict:
+        visibility = self.settings.get_env("MASTODON_VISIBILITY", "public").lower()
+        if visibility not in ("public", "unlisted", "private", "direct"):
+            visibility = "public"
+        return {
+            "status": self._text(post),
+            "visibility": visibility,
+            "language": "en",
+        }
+
+    def _idempotency_key(self, post: Post) -> str:
+        seed = f"{post.repo_url}|{post.title}".encode()
+        return hashlib.sha256(seed).hexdigest()
+
+    def _publish_live(self, post: Post) -> PublishResult:
+        resp = self.client().post(
+            f"{self._base()}/api/v1/statuses",
+            headers={
+                "Authorization": f"Bearer {self.settings.get_env('MASTODON_ACCESS_TOKEN')}",
+                "Idempotency-Key": self._idempotency_key(post),
+                "Content-Type": "application/json",
+            },
+            json=self.render_payload(post),
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return PublishResult(
+            publisher=self.name,
+            status="published",
+            url=data.get("url") or data.get("uri"),
+            external_id=str(data.get("id", "")),
+            dry_run=False,
+        )

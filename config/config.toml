@@ -1,0 +1,78 @@
+# ============================================================================
+# Content Engine — non-secret tunables.
+# Secrets (API keys, tokens) belong in .env, NOT here.
+# Values here can be overridden by environment variables where noted.
+# ============================================================================
+
+[source.github]
+# We approximate "trending" via the GitHub Search API (compliant, documented),
+# not by scraping the github.com/trending HTML page. See docs/API_FINDINGS.md.
+#
+# Two complementary queries are merged and de-duplicated:
+#   1. "rising"  -> recently-created repos that already have traction
+#   2. "active"  -> established popular repos with very recent pushes
+min_stars = 150               # floor for the "active" query
+rising_min_stars = 75         # floor for the "rising" (recently created) query
+rising_created_within_days = 30   # how new a "rising" repo may be
+active_pushed_within_days = 14    # how recently an "active" repo must have been pushed
+per_query_limit = 50          # results pulled per query (GitHub caps page size at 100)
+# Optional filters. Empty lists = no filter.
+languages = []                # e.g. ["Python", "Rust", "Go", "TypeScript"]
+topics = []                   # e.g. ["llm", "developer-tools"]
+# Topics that strongly signal relevance to our audience (used as a scoring bonus, not a filter):
+preferred_topics = [
+    "llm", "ai", "machine-learning", "developer-tools", "cli", "database",
+    "kubernetes", "observability", "data-engineering", "rust", "golang",
+    "python", "typescript", "fintech", "quant", "trading", "security",
+    "infrastructure", "framework", "api", "compiler", "runtime",
+]
+
+[ranking]
+# Hard filters — a repo failing any of these is skipped (with a stored reason).
+min_stars = 150
+min_readme_chars = 800        # skip thin READMEs
+skip_archived = true
+skip_forks = true             # skip forks unless strongly justified (see allow_forks_min_stars)
+allow_forks_min_stars = 20000 # a fork this popular is likely a real project; allow it
+require_description = true
+max_repo_age_days = 0         # 0 = no max age (we want both new and established repos)
+# Block-list of owners/repos we never want to feature (substring match on full_name, lowercased):
+blocklist = []
+
+[scoring]
+# Weights for the composite score. Higher score = more likely to be picked.
+# Score is computed on log-scaled stars + recency + traction + topic relevance.
+weight_stars = 1.0
+weight_recent_push = 0.6      # rewards repos pushed very recently
+weight_rising = 0.8           # rewards high stars-per-day-since-creation
+weight_topic_match = 0.5      # rewards preferred_topics overlap
+weight_readme_quality = 0.3   # rewards substantial READMEs
+weight_has_homepage = 0.1
+
+[content]
+# Target length window for the long-form article body (markdown), in words.
+target_words_min = 450
+target_words_max = 900
+# Microblog/summary length budget (chars) for platforms like Bluesky/Mastodon.
+summary_max_chars = 280
+max_tags = 4
+
+[review]
+# The reviewer must clear these bars for the content to be eligible to publish.
+min_overall_score = 7.0       # on a 0-10 scale
+block_on_high_severity = true # any high-severity issue blocks publishing
+max_revisions = 1             # how many writer<->reviewer revision rounds to attempt
+
+[quality]
+# Deterministic final checks (run after the AI reviewer).
+banned_phrases = [
+    "game changer", "game-changer", "revolutionary", "this changes everything",
+    "unlocks the future", "ai is transforming everything", "groundbreaking",
+    "next big thing", "supercharge your workflow", "10x productivity",
+    "in today's fast-paced world", "in the world of", "look no further",
+    "dive in", "delve into", "in conclusion", "in summary,",
+    "as an ai", "i cannot", "elevate your", "seamlessly integrate",
+]
+max_banned_phrase_hits = 0    # any banned phrase blocks publishing in live mode
+require_repo_name_in_body = true
+min_headings = 2
