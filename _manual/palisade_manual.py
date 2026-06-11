@@ -42,6 +42,12 @@ class ClaudeReplayClient(ModelClient):
 
 def main() -> int:
     live = "--live" in sys.argv
+    # --slug <slug>: pin the run to one guide. Used by stateless cloud runs
+    # (selection done beforehand via palisade_next.py); without it, selection
+    # falls back to the local store's next-unused logic.
+    slug = None
+    if "--slug" in sys.argv:
+        slug = sys.argv[sys.argv.index("--slug") + 1]
     if not DRAFT_PATH.exists():
         print(f"Missing {DRAFT_PATH} — author the adapted article first.")
         return 1
@@ -51,7 +57,16 @@ def main() -> int:
     settings = load_settings()
     settings = dataclasses.replace(settings, publish_mode="live" if live else "dry_run")
 
-    campaign = PalisadeCampaign(settings, model=ClaudeReplayClient(draft_json))
+    guides = None
+    if slug:
+        from content_engine.campaigns import load_guides
+
+        guides = [g for g in load_guides() if g.slug == slug]
+        if not guides:
+            print(f"No guide with slug {slug!r} in the queue.")
+            return 1
+
+    campaign = PalisadeCampaign(settings, guides=guides, model=ClaudeReplayClient(draft_json))
     # force=True: the dry-run preview earlier the same day is terminal; the
     # live rerun must re-pick the same guide rather than skip or advance.
     summary = campaign.run(force=True)
