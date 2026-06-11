@@ -52,7 +52,9 @@ def main() -> int:
     settings = dataclasses.replace(settings, publish_mode="live" if live else "dry_run")
 
     campaign = PalisadeCampaign(settings, model=ClaudeReplayClient(draft_json))
-    summary = campaign.run()
+    # force=True: the dry-run preview earlier the same day is terminal; the
+    # live rerun must re-pick the same guide rather than skip or advance.
+    summary = campaign.run(force=True)
     print(json.dumps(summary.to_dict(), indent=2, ensure_ascii=False))
     return 1 if summary.status == "failed" else 0
 
