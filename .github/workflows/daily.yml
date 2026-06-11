@@ -1,9 +1,12 @@
 name: Daily content run
 
 on:
-  schedule:
-    # 14:00 UTC every day. Adjust to taste (cron is always UTC).
-    - cron: "0 14 * * *"
+  # Schedule disabled 2026-06-11: the trending pipeline has no funded model
+  # provider (AI_PROVIDER defaults to mock, whose output the quality gate
+  # rejects), so a daily cron only commits state noise. Re-enable once an
+  # ANTHROPIC_API_KEY/OPENAI_API_KEY with quota is configured:
+  # schedule:
+  #   - cron: "0 14 * * *"
   workflow_dispatch:
     inputs:
       mode:

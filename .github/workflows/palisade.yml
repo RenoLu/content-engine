@@ -1,0 +1,52 @@
+name: Daily DEV.to syndication (Agent Palisade)
+
+on:
+  schedule:
+    # 12:00 UTC daily = 8am EDT / 7am EST — before the US-morning DEV.to wave.
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: palisade-syndication
+  cancel-in-progress: false
+
+jobs:
+  syndicate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Author and publish the next guide adaptation
+        uses: anthropics/claude-code-action@v1
+        env:
+          DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: --allowedTools "Bash,Read,Write,Edit,Glob,Grep,WebFetch" --model claude-sonnet-4-6
+          prompt: |
+            You are running the scheduled DEV.to syndication job for Agent Palisade (agentpalisade.com). The content-engine repo is checked out at the working directory. Your job: adapt the next unsyndicated site guide into a DEV.to article and publish it publicly.
+
+            The environment variable DEVTO_API_KEY is set. Use PYTHONPATH=src for all python commands.
+
+            Steps:
+            1. Setup: run `pip install -e .` in the repo root.
+            2. Select the guide: run `PYTHONPATH=src python _manual/palisade_next.py`. It prints JSON for the next guide; dedup is against the DEV.to account itself, so re-runs are always safe. If it prints {"exhausted": true} (exit code 2), STOP and end successfully, reporting that the syndication queue is exhausted and Stage B content generation is needed next.
+            3. Ground yourself: fetch the guide's live page (the `url` field) with WebFetch or curl and read it carefully. That page is your only source material.
+            4. Author the adaptation: write the file `_manual/palisade_draft.json` containing a single JSON object with keys: title, summary, tags (use the guide's tags), body_markdown. Requirements:
+               - 450-900 words of markdown; at least two `##` section headings; no H1 (the title field is the H1).
+               - Rephrase and restructure rather than copying sentences; keep the substance; standalone article; experienced-practitioner voice aimed at small-business operators and the developers who support them.
+               - No hype, no invented statistics, no client names, no guarantees. The title must differ from the guide's title. The summary is one sentence under 280 characters.
+               - NEVER use these phrases (a deterministic quality gate blocks them): game changer, game-changer, revolutionary, groundbreaking, this changes everything, unlocks the future, next big thing, supercharge your workflow, 10x productivity, in today's fast-paced world, in the world of, look no further, dive in, delve into, in conclusion, in summary,, as an ai, elevate your, seamlessly integrate.
+               - Do NOT write any self-promotion or links in the body - the canonical URL and the Agent Palisade CTA footer are appended automatically by the publisher.
+            5. Publish: run `DEVTO_PUBLISHED=true ENABLED_PUBLISHERS=dryrun,devto PYTHONPATH=src python _manual/palisade_manual.py --live --slug <slug from step 2>`. Inspect the JSON summary it prints: status must be "published" and the devto publish result must contain a URL. If the quality gate rejects the draft (status "rejected" with blocking reasons), fix _manual/palisade_draft.json accordingly and re-run the same command (re-runs are idempotent per publisher).
+            6. Final report: state the guide slug, the live DEV.to article URL, and a suggested 2-sentence LinkedIn blurb ending with the guide's agentpalisade.com URL for the user to post manually.
+
+            Do not modify any repository files other than _manual/palisade_draft.json. Do not commit or push anything.
