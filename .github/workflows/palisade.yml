@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write          # required by claude-code-action to fetch its OIDC token
 
 concurrency:
   group: palisade-syndication
