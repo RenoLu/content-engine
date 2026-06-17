@@ -31,6 +31,10 @@ jobs:
           DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Use the built-in Actions token directly so the action skips the
+          # GitHub App installation-token exchange (the Claude GitHub App is not
+          # installed on this repo, and this job never touches GitHub anyway).
+          github_token: ${{ github.token }}
           claude_args: --allowedTools "Bash,Read,Write,Edit,Glob,Grep,WebFetch" --model claude-sonnet-4-6
           prompt: |
             You are running the scheduled DEV.to syndication job for Agent Palisade (agentpalisade.com). The content-engine repo is checked out at the working directory. Your job: adapt the next unsyndicated site guide into a DEV.to article and publish it publicly.
