@@ -28,6 +28,7 @@ jobs:
       - name: Author and publish the next guide adaptation
         uses: anthropics/claude-code-action@v1
         env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
           HASHNODE_API_KEY: ${{ secrets.HASHNODE_API_KEY }}
           HASHNODE_PUBLICATION_ID: ${{ secrets.HASHNODE_PUBLICATION_ID }}
@@ -38,7 +39,8 @@ jobs:
           MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
           MASTODON_VISIBILITY: public
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Auth via ANTHROPIC_API_KEY (set in env above); the prior
+          # CLAUDE_CODE_OAUTH_TOKEN expired and broke every run from 2026-06-12 on.
           # Use the built-in Actions token directly so the action skips the
           # GitHub App installation-token exchange (the Claude GitHub App is not
           # installed on this repo, and this job never touches GitHub anyway).
