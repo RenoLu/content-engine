@@ -29,6 +29,14 @@ jobs:
         uses: anthropics/claude-code-action@v1
         env:
           DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
+          HASHNODE_API_KEY: ${{ secrets.HASHNODE_API_KEY }}
+          HASHNODE_PUBLICATION_ID: ${{ secrets.HASHNODE_PUBLICATION_ID }}
+          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          BLUESKY_PDS_URL: https://bsky.social
+          MASTODON_BASE_URL: ${{ secrets.MASTODON_BASE_URL }}
+          MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+          MASTODON_VISIBILITY: public
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # Use the built-in Actions token directly so the action skips the
@@ -39,7 +47,7 @@ jobs:
           prompt: |
             You are running the scheduled DEV.to syndication job for Agent Palisade (agentpalisade.com). The content-engine repo is checked out at the working directory. Your job: adapt the next unsyndicated site guide into a DEV.to article and publish it publicly.
 
-            The environment variable DEVTO_API_KEY is set. Use PYTHONPATH=src for all python commands.
+            The cross-post credentials (DEV.to, Hashnode, Bluesky, Mastodon) are set as environment variables. Use PYTHONPATH=src for all python commands.
 
             Steps:
             1. Setup: run `pip install -e .` in the repo root.
@@ -51,7 +59,7 @@ jobs:
                - No hype, no invented statistics, no client names, no guarantees. The title must differ from the guide's title. The summary is one sentence under 280 characters.
                - NEVER use these phrases (a deterministic quality gate blocks them): game changer, game-changer, revolutionary, groundbreaking, this changes everything, unlocks the future, next big thing, supercharge your workflow, 10x productivity, in today's fast-paced world, in the world of, look no further, dive in, delve into, in conclusion, in summary,, as an ai, elevate your, seamlessly integrate.
                - Do NOT write any self-promotion or links in the body - the canonical URL and the Agent Palisade CTA footer are appended automatically by the publisher.
-            5. Publish: run `DEVTO_PUBLISHED=true ENABLED_PUBLISHERS=dryrun,devto PYTHONPATH=src python _manual/palisade_manual.py --live --slug <slug from step 2>`. Inspect the JSON summary it prints: status must be "published" and the devto publish result must contain a URL. If the quality gate rejects the draft (status "rejected" with blocking reasons), fix _manual/palisade_draft.json accordingly and re-run the same command (re-runs are idempotent per publisher).
+            5. Publish: run `DEVTO_PUBLISHED=true ENABLED_PUBLISHERS=dryrun,devto,hashnode,bluesky,mastodon PYTHONPATH=src python _manual/palisade_manual.py --live --slug <slug from step 2>`. Inspect the JSON summary it prints: status must be "published" and the devto publish result must contain a URL. The hashnode/bluesky/mastodon publishers also run; any that are unconfigured are skipped, and per-publisher success is tracked independently. If the quality gate rejects the draft (status "rejected" with blocking reasons), fix _manual/palisade_draft.json accordingly and re-run the same command (re-runs are idempotent per publisher).
             6. Final report: state the guide slug, the live DEV.to article URL, and a suggested 2-sentence LinkedIn blurb ending with the guide's agentpalisade.com URL for the user to post manually.
 
             Do not modify any repository files other than _manual/palisade_draft.json. Do not commit or push anything.
