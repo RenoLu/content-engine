@@ -25,6 +25,7 @@ output/
 # content-engine daily-run scratch (_manual/)
 _manual/repo.json
 _manual/article.json
+_manual/batch/
 _manual/_readme.md
 _manual/_facts.txt
 _manual/last_summary.json
