@@ -22,6 +22,16 @@ output/
 *.db
 *.log
 
+# content-engine daily-run scratch (_manual/)
+_manual/repo.json
+_manual/article.json
+_manual/_readme.md
+_manual/_facts.txt
+_manual/last_summary.json
+_manual/LATEST_RUN.txt
+_manual/published_log.md
+_manual/logs/
+
 # OS
 .DS_Store
 Thumbs.db
