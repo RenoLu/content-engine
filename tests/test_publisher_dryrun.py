@@ -3,11 +3,16 @@ import pytest
 
 from content_engine.models import Post
 from content_engine.publishers import build_publishers
-from content_engine.publishers.bluesky import BlueskyPublisher, _link_facets
+from content_engine.publishers.bluesky import BlueskyPublisher, _link_facets, _tag_facets
 from content_engine.publishers.devto import DevToPublisher, _normalize_tags
 from content_engine.publishers.dryrun import DryRunPublisher
 from content_engine.publishers.ghost import make_ghost_jwt
-from content_engine.publishers.util import markdown_to_html, microblog_text, to_plain_text
+from content_engine.publishers.util import (
+    hashtags_for,
+    markdown_to_html,
+    microblog_text,
+    to_plain_text,
+)
 
 
 @pytest.fixture
@@ -104,6 +109,30 @@ def test_devto_no_repo_url_leaves_body_unchanged(settings, post):
     assert body == p.body_markdown
 
 
+def test_devto_brand_byline_when_enabled(settings, post):
+    import dataclasses
+    env = dict(settings.env)
+    env["BRAND_BYLINE_URL"] = "https://www.agentpalisade.com"
+    s = dataclasses.replace(settings, env=env)
+    body = DevToPublisher(s).render_payload(post)["article"]["body_markdown"]
+    assert "https://www.agentpalisade.com" in body and "Agent Palisade" in body
+
+
+def test_devto_brand_byline_deduped_and_off_by_default(settings, post):
+    import dataclasses
+    # off by default (no env) -> no byline
+    body = DevToPublisher(settings).render_payload(post)["article"]["body_markdown"]
+    assert "agentpalisade.com" not in body
+    # on, but body already mentions the brand URL -> not doubled
+    p = dataclasses.replace(
+        post, body_markdown=post.body_markdown + "\n\nMore at https://www.agentpalisade.com/x")
+    env = dict(settings.env)
+    env["BRAND_BYLINE_URL"] = "https://www.agentpalisade.com"
+    s = dataclasses.replace(settings, env=env)
+    body = DevToPublisher(s).render_payload(p)["article"]["body_markdown"]
+    assert body.count("https://www.agentpalisade.com") == 1
+
+
 def test_build_publishers_always_includes_dryrun(settings):
     pubs = build_publishers(settings)
     assert any(p.name == "dryrun" for p in pubs)
@@ -159,6 +188,47 @@ def test_microblog_text_includes_url_and_truncates():
     text = microblog_text(p, 300)
     assert len(text) <= 300
     assert "https://github.com/acme/widget" in text
+
+
+def test_hashtags_for_maps_and_camelcases():
+    p = Post(title="t", body_markdown="b", summary="s",
+             tags=["ai", "coding-agents", "rust"])
+    assert hashtags_for(p) == ["AI", "CodingAgents", "RustLang"]
+
+
+def test_hashtags_for_prefers_trending():
+    p = Post(title="t", body_markdown="b", summary="s",
+             tags=["ai", "rust", "python"])
+    tags = hashtags_for(p, trending={"python"}, max_tags=2)
+    assert tags[0] == "Python"          # trending hashtag floated to the front
+    assert len(tags) == 2
+
+
+def test_microblog_text_appends_hashtags_within_limit():
+    p = Post(title="t", body_markdown="b", summary="A take on it.",
+             repo_url="https://github.com/acme/widget", tags=["ai", "agents"])
+    text = microblog_text(p, 300, hashtags=hashtags_for(p))
+    assert "#AI" in text and "#AIAgents" in text
+    assert "https://github.com/acme/widget" in text
+    assert len(text) <= 300
+
+
+def test_bluesky_tag_facets_byte_offsets():
+    text = "hello #AI and #DevTools"
+    facets = _tag_facets(text)
+    assert [f["features"][0]["tag"] for f in facets] == ["AI", "DevTools"]
+    idx = facets[0]["index"]
+    assert text.encode()[idx["byteStart"]:idx["byteEnd"]].decode() == "#AI"
+
+
+def test_bluesky_payload_has_hashtags_and_both_facet_types(settings):
+    p = Post(title="t", body_markdown="b", summary="A grounded take.",
+             repo_url="https://github.com/acme/widget", tags=["ai", "agents"])
+    payload = BlueskyPublisher(settings).render_payload(p)
+    assert "#AI" in payload["record"]["text"]
+    types = {feat["$type"] for f in payload["record"]["facets"] for feat in f["features"]}
+    assert "app.bsky.richtext.facet#link" in types
+    assert "app.bsky.richtext.facet#tag" in types
 
 
 def test_bluesky_link_facets_byte_offsets():

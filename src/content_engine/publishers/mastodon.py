@@ -11,7 +11,7 @@ import hashlib
 
 from ..models import Post, PublishResult
 from .base import BasePublisher
-from .util import microblog_text
+from .util import hashtags_for, microblog_text
 
 _DEFAULT_LIMIT = 500
 
@@ -26,7 +26,8 @@ class MastodonPublisher(BasePublisher):
         return bool(self._base()) and bool(self.settings.get_env("MASTODON_ACCESS_TOKEN"))
 
     def _text(self, post: Post) -> str:
-        return microblog_text(post, _DEFAULT_LIMIT, include_url=True)
+        return microblog_text(post, _DEFAULT_LIMIT, include_url=True,
+                              hashtags=hashtags_for(post))
 
     def render_payload(self, post: Post) -> dict:
         visibility = self.settings.get_env("MASTODON_VISIBILITY", "public").lower()

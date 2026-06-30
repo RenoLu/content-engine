@@ -30,6 +30,7 @@ jobs:
       PUBLISH_MODE: ${{ github.event.inputs.mode || 'live' }}
       ENABLED_PUBLISHERS: "dryrun,devto,bluesky,mastodon"
       DEVTO_PUBLISHED: "true"
+      BRAND_BYLINE_URL: "https://www.agentpalisade.com"
       DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
       BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
       BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}

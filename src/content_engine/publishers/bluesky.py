@@ -7,13 +7,15 @@ clickable link, and respect the 300-grapheme limit. See docs/API_FINDINGS.md.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 from ..models import Post, PublishResult
 from .base import BasePublisher
-from .util import microblog_text
+from .util import hashtags_for, microblog_text
 
 _POST_LIMIT = 300
+_HASHTAG_RE = re.compile(r"#(\w+)")
 
 
 def _link_facets(text: str, url: str) -> list[dict]:
@@ -33,6 +35,23 @@ def _link_facets(text: str, url: str) -> list[dict]:
     ]
 
 
+def _tag_facets(text: str) -> list[dict]:
+    """Build richtext tag facets so each ``#hashtag`` is clickable/searchable."""
+    facets = []
+    for m in re.finditer(_HASHTAG_RE, text):
+        start = len(text[: m.start()].encode("utf-8"))
+        end = len(text[: m.end()].encode("utf-8"))
+        facets.append({
+            "index": {"byteStart": start, "byteEnd": end},
+            "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": m.group(1)}],
+        })
+    return facets
+
+
+def _facets(text: str, url: str) -> list[dict]:
+    return _link_facets(text, url) + _tag_facets(text)
+
+
 class BlueskyPublisher(BasePublisher):
     name = "bluesky"
 
@@ -45,7 +64,8 @@ class BlueskyPublisher(BasePublisher):
         )
 
     def _text(self, post: Post) -> str:
-        return microblog_text(post, _POST_LIMIT, include_url=True)
+        return microblog_text(post, _POST_LIMIT, include_url=True,
+                              hashtags=hashtags_for(post))
 
     def render_payload(self, post: Post) -> dict:
         # Mirrors the real createRecord body. `repo` (the account DID) and the
@@ -63,7 +83,7 @@ class BlueskyPublisher(BasePublisher):
                 "text": text,
                 "createdAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                 "langs": ["en"],
-                "facets": _link_facets(text, url),
+                "facets": _facets(text, url),
             },
         }
 

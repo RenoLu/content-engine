@@ -196,14 +196,75 @@ def markdown_to_html(markdown: str) -> str:
     return "\n".join(html)
 
 
-def microblog_text(post: Post, limit: int, include_url: bool = True) -> str:
-    """Compose a microblog-sized message from a Post, reserving room for the URL."""
+# Map common topic tags to high-traffic, well-formed hashtags. Unmapped tags are
+# CamelCased (e.g. "coding-agents" -> "CodingAgents"). Used to make micro-posts
+# discoverable (Mastodon discovery is hashtag-driven; Bluesky benefits too).
+_TAG_HASHTAG: dict[str, str] = {
+    "ai": "AI", "artificial-intelligence": "AI",
+    "llm": "LLM", "llms": "LLM", "large-language-models": "LLM",
+    "agents": "AIAgents", "ai-agents": "AIAgents", "agent": "AIAgents",
+    "agentic": "AIAgents", "orchestration": "AIAgents",
+    "machine-learning": "MachineLearning", "ml": "MachineLearning",
+    "deep-learning": "DeepLearning", "nlp": "NLP",
+    "open-source": "OpenSource", "opensource": "OpenSource",
+    "python": "Python", "typescript": "TypeScript", "javascript": "JavaScript",
+    "rust": "RustLang", "go": "golang", "golang": "golang",
+    "developer-tools": "DevTools", "dev-tools": "DevTools", "devtools": "DevTools",
+    "tools": "DevTools", "framework": "DevTools",
+    "security": "infosec", "infosec": "infosec", "cybersecurity": "infosec",
+    "self-hosted": "SelfHosted", "selfhosted": "SelfHosted", "privacy": "privacy",
+    "rag": "RAG", "mcp": "MCP", "coding-agents": "CodingAgents",
+    "claude-code": "ClaudeCode", "prompt-engineering": "PromptEngineering",
+    "automation": "automation", "productivity": "productivity",
+    "vercel": "Vercel", "memory": "AI",
+}
+
+_WORD_SPLIT_RE = re.compile(r"[-_\s]+")
+
+
+def _camel(tag: str) -> str:
+    return "".join(p[:1].upper() + p[1:] for p in _WORD_SPLIT_RE.split(tag.strip()) if p)
+
+
+def hashtags_for(post: Post, trending: set[str] | None = None, max_tags: int = 3) -> list[str]:
+    """Pick up to ``max_tags`` hashtags from ``post.tags``. Tags whose hashtag is
+    in ``trending`` (the platform's currently-trending tags, lowercased) are
+    preferred so the post rides an active wave; the rest map via ``_TAG_HASHTAG``
+    or CamelCase."""
+    trending = {t.lower() for t in (trending or set())}
+    scored: list[tuple[bool, str]] = []
+    for tag in post.tags or []:
+        t = (tag or "").strip().lower()
+        if not t:
+            continue
+        h = _TAG_HASHTAG.get(t) or _camel(t)
+        if h:
+            scored.append((h.lower() in trending, h))
+    scored.sort(key=lambda x: not x[0])  # trending hashtags first (stable)
+    out: list[str] = []
+    seen: set[str] = set()
+    for _, h in scored:
+        if h.lower() in seen:
+            continue
+        seen.add(h.lower())
+        out.append(h)
+        if len(out) >= max_tags:
+            break
+    return out
+
+
+def microblog_text(post: Post, limit: int, include_url: bool = True,
+                   hashtags: list[str] | None = None) -> str:
+    """Compose a microblog-sized message from a Post, reserving room for the URL
+    and an optional trailing hashtag line."""
     base = (post.summary or post.title or "").strip()
     url = post.repo_url or post.canonical_url or ""
-    if include_url and url:
-        if url in base:
-            return truncate(base, limit)
-        reserve = len(url) + 1
+    tag_str = " ".join(f"#{h}" for h in (hashtags or []) if h)
+    tagline = f"\n\n{tag_str}" if tag_str else ""
+
+    if include_url and url and url not in base:
+        reserve = len(url) + 1 + len(tagline)
         body = truncate(base, max(0, limit - reserve))
-        return f"{body}\n{url}".strip()
-    return truncate(base, limit)
+        return f"{body}\n{url}{tagline}".strip()
+    body = truncate(base, max(0, limit - len(tagline)))
+    return f"{body}{tagline}".strip()

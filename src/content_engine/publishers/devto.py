@@ -44,7 +44,7 @@ class DevToPublisher(BasePublisher):
                       post.tags, tags)
         article: dict = {
             "title": post.title,
-            "body_markdown": self._body_with_repo_link(post),
+            "body_markdown": self._body_footer(post),
             "published": published,
             "tags": tags,
         }
@@ -65,6 +65,19 @@ class DevToPublisher(BasePublisher):
         url = post.repo_url
         if url and url not in body:
             body = body.rstrip() + f"\n\n---\n\n**GitHub:** [{url}]({url})\n"
+        return body
+
+    def _body_footer(self, post: Post) -> str:
+        """Repo link + (when ``BRAND_BYLINE_URL`` is set) a soft brand byline that
+        funnels readers from the article back to the site. Deduped: skipped if the
+        brand URL is already in the body (e.g. a palisade post with its own CTA)."""
+        body = self._body_with_repo_link(post)
+        brand = self.settings.get_env("BRAND_BYLINE_URL")
+        if brand and brand not in body:
+            body = body.rstrip() + (
+                f"\n\n---\n\n*Curated by [Agent Palisade]({brand}) — "
+                "practical AI for small and mid-sized businesses.*\n"
+            )
         return body
 
     def _publish_live(self, post: Post) -> PublishResult:
