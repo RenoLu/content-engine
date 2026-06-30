@@ -1,0 +1,66 @@
+name: Publish queued content
+
+# Publishes one pre-generated article per day from _manual/queue/. Content is
+# authored + gated LOCALLY (agent-as-model) and committed to the queue, so this
+# workflow never needs a model API / Anthropic credit — it only POSTs.
+
+on:
+  schedule:
+    - cron: "0 13 * * *"   # 13:00 UTC = 9am US Eastern (EDT)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Publish mode for this manual run"
+        type: choice
+        options: [dry_run, live]
+        default: dry_run
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-queue
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      # scheduled runs publish live; manual dispatch defaults to dry_run
+      PUBLISH_MODE: ${{ github.event.inputs.mode || 'live' }}
+      ENABLED_PUBLISHERS: "dryrun,devto,bluesky,mastodon"
+      DEVTO_PUBLISHED: "true"
+      DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
+      BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+      BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+      MASTODON_BASE_URL: ${{ secrets.MASTODON_BASE_URL }}
+      MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Publish next queued item
+        run: python _manual/publish_queue.py
+
+      - name: Persist queue (move published item out of the queue)
+        if: always()
+        run: |
+          git config user.name "content-engine[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A _manual/queue _manual/published 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "no queue changes to commit"
+          else
+            git commit -m "chore: publish queued content $(date -u +%F) [skip ci]"
+            # rebase-on-push to tolerate a concurrent state commit from palisade.yml
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin main && git push && break
+              echo "push retry $i"; sleep 3
+            done
+          fi
