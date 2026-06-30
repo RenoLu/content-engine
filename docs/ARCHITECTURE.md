@@ -8,7 +8,7 @@ It is built around three interfaces so the moving parts are swappable:
 
 | Concern        | Interface                         | MVP implementation                 |
 |----------------|-----------------------------------|------------------------------------|
-| Trend source   | `sources.base.Source`             | `GitHubTrendingSource` (Search API)|
+| Trend source   | `sources.base.Source`             | `GitHubTrendingHtmlSource` (real trending page) + `GitHubTrendingSource` (Search API), chosen by `sources.build_source` |
 | AI model       | `agents.model_client.ModelClient` | `mock` / `openai` / `anthropic`    |
 | Publisher      | `publishers.base.BasePublisher`   | `dryrun` + 8 real platforms        |
 
@@ -46,9 +46,13 @@ dependency-light Python (httpx + stdlib).
 
 Implemented in `pipeline.Pipeline.run()`:
 
-1. **Collect** — `Source.fetch_candidates()` returns candidate `Repository`
-   objects. GitHub source issues two Search API queries ("rising" = recently
-   created + starred, "active" = popular + recently pushed) and de-dupes them.
+1. **Collect** — `sources.build_source(settings)` picks the source from
+   `[source].provider`. The default `trending_html` source parses the real
+   `github.com/trending` page for the ranked `owner/name` list and hydrates each
+   via the official REST API (recording `trending_rank`), falling back to / backfilling
+   from the `search_api` source on a fetch/parse miss. The `search_api` source issues
+   two Search queries ("rising" = recently created + starred, "active" = popular +
+   recently pushed) and de-dupes them.
 2. **Rank / filter** — `RepoRanker.prefilter_and_score()` applies metadata hard
    filters (archived, fork, min stars, description, blocklist, **already
    featured**) and computes a transparent weighted score. Skip reasons are
@@ -87,7 +91,8 @@ src/content_engine/
   logging_setup.py     # stderr logging
   quality.py           # deterministic final-quality gate
 
-  sources/             # Source interface + GitHub (Search API) + GitHubClient
+  sources/             # Source interface + build_source factory; GitHub trending
+                       #   page source + Search-API source + GitHubClient
   ranking/             # hard filters + weighted scoring
   research/            # README enrichment
   agents/              # ModelClient (mock/openai/anthropic), prompts,
@@ -107,6 +112,8 @@ columns hold anything queried or constrained.
   idempotent per date. Columns: status, mode, repo_full_name, repo_json,
   draft_json, review_json, final_json, skip_reason, error, timestamps.
 - **repo_history** — `full_name` PRIMARY KEY → a repo is **never featured twice**.
+  A repo is recorded here **only when it is actually published live** — a dry-run,
+  rejection, or failure leaves it eligible for a future run.
 - **candidates** — every candidate considered for a date, with score + skip
   reason (debuggability / "store skipped reasons").
 - **publish_results** — `UNIQUE(run_date, publisher)` → **no double-posting**;
@@ -159,11 +166,15 @@ because the entrypoint is a single CLI command. See `docs/RUNBOOK.md`.
 
 ## Important design tradeoffs
 
-- **Search API instead of scraping `github.com/trending`.** There is no official
-  trending API. Scraping the HTML page is brittle and discouraged by GitHub's
-  acceptable-use policy. The Search API is an *approximation* (it can't sort by
-  star-velocity over a window) but it is documented, stable, and compliant. The
-  source interface isolates this choice. See `docs/API_FINDINGS.md`.
+- **Real trending page, with a Search-API safety net.** `github.com/trending` has
+  no official API, so the default `trending_html` source parses its public,
+  unauthenticated HTML to get the canonical ranked list, then hydrates each repo
+  through the official REST API. Because parsing HTML is inherently fragile, the
+  source automatically falls back to — and backfills from — the `search_api`
+  source (the documented, compliant *approximation*) whenever the page can't be
+  fetched or parsed. Set `provider = "search_api"` for a 100%-official-API setup.
+  The `Source` interface + `build_source` factory isolate the choice. See
+  `docs/API_FINDINGS.md`.
 - **Direct HTTP calls instead of vendor SDKs.** Calling OpenAI/Anthropic/GitHub
   REST endpoints via httpx keeps the dependency tree tiny (httpx + python-dotenv),
   dodges Python-3.14 wheel issues, and makes everything trivially mockable with
@@ -176,5 +187,9 @@ because the entrypoint is a single CLI command. See `docs/RUNBOOK.md`.
 - **Dry-run is the default and is enforced centrally.** The system cannot post
   externally unless `PUBLISH_MODE=live` *and* the content passes review — and even
   then only to explicitly enabled, credentialed publishers.
-- **One repo, one day, never reused.** Simplicity and a clean content cadence over
-  throughput. Easily relaxed later (the dedup key is per-repo, not per-day).
+- **One repo, one day, never reused — but only a live publish "consumes" it.**
+  Simplicity and a clean content cadence over throughput. Only an actual published
+  run records a repo in `repo_history`; dry-runs, rejections, and failures stay
+  eligible so testing never silently exhausts the candidate pool (mirrors the
+  publisher guard where a dry-run must not block a later live post). Easily
+  relaxed later (the dedup key is per-repo, not per-day).

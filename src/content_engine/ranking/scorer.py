@@ -21,6 +21,45 @@ from ..models import Repository
 log = get_logger(__name__)
 
 
+# AI-relevance lists for the optional ``require_ai_topic`` hard filter. Exact
+# GitHub topic tags are the primary, reliable signal; the keyword fallback
+# catches AI repos that simply don't tag themselves.
+AI_TOPICS: frozenset[str] = frozenset({
+    "llm", "llms", "large-language-models", "ai", "artificial-intelligence",
+    "machine-learning", "ml", "deep-learning", "agents", "ai-agents", "agentic",
+    "agent", "rag", "retrieval-augmented-generation", "generative-ai", "genai",
+    "llmops", "mlops", "nlp", "natural-language-processing", "transformers",
+    "transformer", "langchain", "llamaindex", "vector-database", "vector-search",
+    "embeddings", "gpt", "chatgpt", "openai", "anthropic", "claude", "llama",
+    "diffusion", "stable-diffusion", "computer-vision", "neural-network",
+    "neural-networks", "pytorch", "tensorflow", "fine-tuning", "inference",
+    "mcp", "model-context-protocol", "chatbot", "chatbots", "prompt-engineering",
+    "ai-tools", "copilot", "gemini", "mistral",
+})
+
+# Substrings checked against a space-padded "name + description". Kept
+# conservative (clear AI phrases) so non-AI repos don't slip through.
+AI_KEYWORDS: tuple[str, ...] = (
+    " ai ", " ai-", "-ai ", "a.i.", "artificial intelligence", "llm",
+    "large language model", "machine learning", "deep learning",
+    "neural network", "generative ai", "genai", "langchain", "llamaindex",
+    "chatgpt", "openai", " gpt-", "gpt-4", "diffusion model", "stable diffusion",
+    "computer vision", "fine-tun", "embeddings", "vector database",
+    "vector search", "semantic search", "retrieval-augmented", "agentic",
+    "ai agent", "ai-agent", "llm agent", "autonomous agent",
+    "model context protocol", " mcp ", "prompt engineering", "chatbot",
+)
+
+
+def _looks_ai(repo: Repository) -> bool:
+    """True if the repo is AI-related — by topic tag or an AI keyword in its
+    name/description. Used only when ``require_ai_topic`` is enabled."""
+    if {t.lower() for t in repo.topics} & AI_TOPICS:
+        return True
+    hay = f" {(repo.name or '').lower()} {(repo.description or '').lower()} "
+    return any(kw in hay for kw in AI_KEYWORDS)
+
+
 def _parse_dt(s: str | None) -> datetime | None:
     if not s:
         return None
@@ -56,6 +95,8 @@ def hard_filter_reason(repo: Repository, settings: Settings,
         return "no_description"
     if repo.stars < rk.min_stars:
         return f"below_min_stars(<{rk.min_stars})"
+    if settings.github.require_ai_topic and not _looks_ai(repo):
+        return "not_ai"
     if rk.max_repo_age_days > 0:
         age = _days_since(repo.created_at)
         if age is not None and age > rk.max_repo_age_days:
@@ -72,7 +113,8 @@ def readme_filter_reason(repo: Repository, settings: Settings) -> str | None:
 
 def score_repo(repo: Repository, scoring: ScoringConfig,
                preferred_topics: list[str],
-               active_window_days: int = 14) -> tuple[float, dict[str, float]]:
+               active_window_days: int = 14,
+               trending_limit: int = 25) -> tuple[float, dict[str, float]]:
     """Compute a composite score and a per-component breakdown."""
     breakdown: dict[str, float] = {}
 
@@ -111,6 +153,14 @@ def score_repo(repo: Repository, scoring: ScoringConfig,
 
     breakdown["has_homepage"] = scoring.weight_has_homepage * (1.0 if repo.homepage else 0.0)
 
+    # Trending-page position (only set by the trending_html source): 1.0 at the
+    # top of the page, decaying to 0.0 at the bottom. 0 when not from trending.
+    if repo.trending_rank is not None and trending_limit > 0:
+        rank_signal = max(0.0, 1.0 - repo.trending_rank / trending_limit)
+    else:
+        rank_signal = 0.0
+    breakdown["trending_rank"] = scoring.weight_trending_rank * rank_signal
+
     total = round(sum(breakdown.values()), 4)
     breakdown = {k: round(v, 4) for k, v in breakdown.items()}
     return total, breakdown
@@ -137,6 +187,7 @@ class RepoRanker:
                     self.settings.scoring,
                     self.settings.github.preferred_topics,
                     self.settings.github.active_pushed_within_days,
+                    self.settings.trending.limit,
                 )
             else:
                 repo.score, repo.score_breakdown = 0.0, {}

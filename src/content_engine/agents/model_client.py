@@ -144,6 +144,25 @@ class MockClient(ModelClient):
         repo = self._match(self._REPO_RE, prompt, "owner/repo")
         name = repo.split("/")[-1]
 
+        if "TASK: ENGAGEMENT REVIEW" in prompt:
+            return json.dumps({
+                "approved": True,
+                "attention_score": 8.2,
+                "voice_score": 8.0,
+                "severity": "low",
+                "issues": [
+                    {
+                        "type": "hook",
+                        "severity": "low",
+                        "text": "Opening line",
+                        "problem": "Could commit to its angle one beat sooner.",
+                        "suggested_fix": "Lead with the most surprising fact.",
+                    }
+                ],
+                "recommended_action": "approve",
+                "notes": "Mock engagement review: thesis-first opening, human voice.",
+            })
+
         if "TASK: REVIEWER" in prompt:
             return json.dumps({
                 "approved": True,

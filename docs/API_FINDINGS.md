@@ -38,20 +38,39 @@ Required environment variables for each integration are listed in `.env.example`
   `X-GitHub-Api-Version: 2022-11-28`. A fine-grained PAT needs only public-repo
   read (Metadata + Contents); a token with *no* scopes still raises your limits.
 - **Endpoints used**:
-  - `GET /search/repositories?q=...&sort=stars&order=desc&per_page=50` — approximate trending.
-  - `GET /repos/{owner}/{repo}` — full metadata.
+  - `GET https://github.com/trending` (HTML, public, no auth) — the canonical
+    ranked list, for the `trending_html` source.
+  - `GET /search/repositories?q=...&sort=stars&order=desc&per_page=50` — approximate
+    trending, for the `search_api` source (and the `trending_html` fallback).
+  - `GET /repos/{owner}/{repo}` — full metadata (used to hydrate trending slugs).
   - `GET /repos/{owner}/{repo}/readme` with `Accept: application/vnd.github.raw+json` — raw README.
-- **Trending approximation** (two merged queries):
-  - rising: `stars:>=75 created:>=<recent>`
-  - active: `stars:>=150 pushed:>=<recent>`
+- **Two source providers** (config `[source].provider` / env `GITHUB_SOURCE`):
+  - **`trending_html`** (default) — fetch the public `github.com/trending` page,
+    parse the ranked `owner/name` list (stdlib `html.parser`, capturing the anchor
+    inside each `<h2 class="… lh-condensed">`), then hydrate each repo via
+    `GET /repos/{owner}/{repo}`. READMEs stay lazy (fetched only for repos the
+    pipeline actually tries). `[source.trending]` knobs: `since`
+    (daily|weekly|monthly), `language`, `spoken_language_code`, `limit`,
+    `min_results_fallback`.
+  - **`search_api`** — two merged Search queries:
+    - rising: `stars:>=75 created:>=<recent>`
+    - active: `stars:>=150 pushed:>=<recent>`
+- **Resilience / fallback**: if the trending page fetch fails or parses to fewer
+  than `min_results_fallback` repos (e.g. GitHub changes the markup), the
+  `trending_html` source automatically **falls back to — and backfills from — the
+  `search_api` source**, so a run never dies on a layout change.
 - **Rate limits**: Search = **30 req/min** authenticated (10/min anon). Core =
-  5,000/hr authenticated (60/hr anon). Search caps at **1,000 results/query**.
-  Honor `x-ratelimit-*` and `Retry-After`.
-- **Gotchas**: no official trending API (Search is an approximation — it can't
-  sort by star-velocity); multiple `language:`/`topic:` qualifiers AND together
-  (one language per query); `incomplete_results: true` means a server-side timeout.
-- **Why not scrape `github.com/trending`?** No API, fragile HTML, discouraged by
-  GitHub's acceptable-use policy. Isolated behind `Source` if ever needed.
+  5,000/hr authenticated (60/hr anon) — hydrating ≤25 trending repos costs ≤25
+  Core calls. Search caps at **1,000 results/query**. Honor `x-ratelimit-*` and
+  `Retry-After`. All calls go through `http_util.request_with_retry`.
+- **Gotchas**: no official trending API; Search can't sort by star-velocity;
+  multiple `language:`/`topic:` qualifiers AND together (one language per query);
+  `incomplete_results: true` means a server-side timeout.
+- **Scraping note**: `github.com/trending` has no API, so `trending_html` parses
+  its public, unauthenticated HTML — a deliberate, narrow exception to the
+  "official APIs only" rule. It needs no login, all metadata/README still come
+  from the official REST API, and the Search-API fallback keeps runs robust to
+  markup changes. Use `provider = "search_api"` for a 100%-API setup.
 
 ```
 GET /search/repositories?q=stars:>=150 pushed:>=2026-05-17&sort=stars&order=desc&per_page=50

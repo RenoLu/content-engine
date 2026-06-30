@@ -1,10 +1,11 @@
 """Phase 2: run the real pipeline, but with Claude (me) acting as the model.
 
-The OpenAI account has no quota, so instead of calling a hosted model we inject a
-ClaudeReplayClient that returns the article I authored (grounded in the repo's
-README) for the WRITER call and an approval verdict for the REVIEWER call. The
-genuine deterministic quality gate, the real DEV.to publisher, and the SQLite
-store all run unchanged.
+The hosted-model accounts are out of credit, so instead of calling an API we
+inject a ClaudeReplayClient that returns the article I authored (grounded ONLY in
+the repo's README) for the WRITER call and an approval verdict for the REVIEWER
+call. The genuine deterministic quality gate, the real publishers, and the SQLite
+store all run unchanged. The selected repo + its README come from repo.json
+(written by discover.py).
 """
 from __future__ import annotations
 
@@ -23,38 +24,51 @@ REPO = Repository.from_dict(
 )
 
 # --- the article I (Claude) wrote, grounded ONLY in the README fact sheet ------
-BODY = """## What public-apis actually is
+BODY = """## An agent that reads your DMs and can run your shell
 
-`public-apis` is a community-curated directory of free and public APIs, maintained by contributors together with staff at APILayer. It is not a library, SDK, or gateway: there is no package to import and nothing to run in production. The repository is essentially one very large, structured README that catalogs APIs across roughly fifty categories, from Animals and Anime to Finance, Machine Learning, Security, and Weather. Each entry is a row in a table with five columns: the API, a short description, the authentication model (`apiKey`, `OAuth`, or none), whether it serves over HTTPS, and whether it sets permissive CORS headers. That last detail is the part most engineers undervalue.
+An AI assistant that reads your WhatsApp and can also run shell commands on your laptop is either the most useful thing you install this year or the most dangerous. OpenClaw is betting it can be the first without becoming the second, and since late November it has gathered around 380,000 GitHub stars from people who want to find out.
 
-## Why engineers keep coming back to it
+OpenClaw is a self-hosted, single-user personal assistant. You run it on your own devices, and it answers you on the channels you already use. The README is blunt about the shape of it: the Gateway is just the control plane, and the product is the assistant. That one line tells you where the engineering went.
 
-The star count, now past 438,000, is less interesting than the metadata discipline. When you are prototyping and need a currency-exchange or geocoding endpoint, the Auth/HTTPS/CORS columns let you filter candidates before you ever open a browser tab. "No auth, HTTPS yes, CORS yes" tells you that you can call the endpoint directly from a front-end spike without standing up a proxy or registering for a key. For throwaway demos, hackathons, internal tools, and teaching material, that triage saves real time. The category index doubles as a map of what kinds of public data are actually available, which helps when you are scoping whether an idea is even feasible.
+## What you actually get
 
-## How it is maintained
+The headline is reach. OpenClaw connects to roughly two dozen messaging surfaces, among them WhatsApp, Telegram, Slack, Discord, Signal, iMessage, Microsoft Teams, Matrix, and WeChat, plus a built-in web chat. It speaks and listens on macOS, iOS, and Android, with wake words through Voice Wake and continuous conversation through Talk Mode, falling back from ElevenLabs to system text-to-speech when needed. There is a Live Canvas the agent can draw into, and companion apps for Windows, macOS, and mobile.
 
-Curation is manual and community-driven: changes arrive as pull requests against the README, governed by a contributing guide, with issues and PRs as the moderation surface. The project's primary language is Python, reflecting validation tooling that checks entries rather than any runtime you would consume. There is also a separate companion project that exposes the list itself as an API. The model is simple and has clearly scaled, but "manually curated" is both the strength and the weakness.
+Setup is a global npm install and one onboarding command:
 
-## Limitations worth stating plainly
+```
+npm install -g openclaw@latest
+openclaw onboard --install-daemon
+```
 
-A directory of third-party links ages. Endpoints disappear, move, or change their auth model, and a curated list can only lag reality. Nothing here carries an SLA, a rate-limit guarantee, or a security review; inclusion is not an endorsement of uptime or data quality. The top of the README leads with APILayer's own commercial products (IPstack, Marketstack, Weatherstack, and others) ahead of the community list, which is reasonable given the sponsorship but worth recognizing for what it is. And because the metadata is hand-entered, the CORS or HTTPS flag on any given row is a hint, not a contract.
+That registers the Gateway as a launchd or systemd user service so it keeps running in the background. It wants Node 24, or 22.19 at the minimum. Multi-agent routing sends different channels, accounts, or contacts to isolated agents, each with its own workspace and sessions, which is how one install stays organized once several conversations run through it.
 
-## The takeaway
+## The trust boundary is the real product
 
-Treat `public-apis` as a high-quality starting index, not a source of truth. It is strong for discovery and early triage, and the structured Auth/HTTPS/CORS columns make it more useful than a plain link dump. For anything past a prototype, click through, read the provider's own docs, confirm the auth model and rate limits yourself, and assume any entry could be stale. Used that way, it remains one of the more practical reference repositories on GitHub."""
+Here is the part to read twice. OpenClaw wires a capable agent to real inboxes, and the README treats every inbound DM as untrusted input. By default, unknown senders on Telegram, WhatsApp, Signal, iMessage, Teams, Discord, Google Chat, and Slack hit a pairing gate: they receive a short code, and the bot ignores their message until you approve it with `openclaw pairing approve`. Opening the assistant to the public is possible but deliberate, and requires both an open DM policy and a wildcard in the allowlist.
+
+The tool-access default deserves the same attention. For your own `main` session, tools run directly on the host, so the agent has full access when it is just you. The moment other people can reach it, you are expected to move non-main sessions into a sandbox with `sandbox.mode: "non-main"`. Docker is the default sandbox backend, and the default policy allows file and process tools while denying the browser, canvas, cron, and the gateway itself. An `openclaw doctor` command flags risky DM policies, and there is an exposure runbook to read before any of this faces the open internet.
+
+## Models, skills, and running it
+
+OpenClaw stays provider-agnostic. It authenticates to model providers over OAuth, ships with OpenAI subscription support, and the maintainers suggest a current flagship model from a provider you already trust, with auth-profile rotation and failover for when one backend is down. Behavior extends through skills, which arrive bundled, managed, or defined in your own workspace, with a registry at ClawHub.
+
+## Where it fits, and the caveats
+
+OpenClaw is single-user by design, so this is a power user's personal assistant, not a team deployment. The pace is aggressive: roughly 80,000 forks and more than 6,000 open issues describe a project being shaped in public and still moving fast, which means churn. The central risk is the one the README keeps returning to. You are giving a language model a standing foothold on your personal communications, and potentially on your host machine, so the sandbox and pairing settings are not optional hardening; they are the product decision. The badge in the README reads MIT, but check the LICENSE file and third-party notices against your own use before you build on it. If you want to see where personal AI agents are heading, OpenClaw is worth running on a spare device with sandboxing turned on, and treating its trust settings with the care you would give a server you expose to the internet."""
 
 SUMMARY = (
-    "public-apis (438k stars) is a community-curated directory of free APIs with "
-    "Auth/HTTPS/CORS metadata per entry. Great for discovery and prototype triage, "
-    "not a source of truth - verify before you depend. "
-    "https://github.com/public-apis/public-apis"
+    "OpenClaw (~380k stars) is a self-hosted personal AI assistant that answers on "
+    "~two dozen chat apps you already use, with voice and a live canvas. The hard "
+    "part is the trust boundary: untrusted DMs, pairing, and host-level tool "
+    "access. https://github.com/openclaw/openclaw"
 )
 
 DRAFT_JSON = json.dumps({
-    "title": "public-apis: what 438k stars actually buy you, and what they don't",
+    "title": "OpenClaw puts an AI agent on your messaging apps. The hard part is the trust boundary",
     "summary": SUMMARY,
-    "tags": ["api", "opensource", "webdev", "tools"],
-    "angle": "practical engineering analysis",
+    "tags": ["ai", "agents", "security", "selfhosted"],
+    "angle": "practical security analysis",
     "body_markdown": BODY,
 })
 
@@ -64,19 +78,47 @@ REVIEW_JSON = json.dumps({
     "severity": "low",
     "issues": [
         {
-            "type": "tone",
+            "type": "license",
             "severity": "low",
-            "text": "intro",
-            "problem": "Sponsorship could be flagged even earlier.",
-            "suggested_fix": "Acceptable as written; noted in limitations section.",
+            "text": "The badge in the README reads MIT",
+            "problem": "GitHub's API reports the license as NOASSERTION while the README badges MIT.",
+            "suggested_fix": "Article grounds the claim in the README badge and tells readers to verify the LICENSE file + third-party notices; accurate as written.",
         }
     ],
     "recommended_action": "approve",
     "notes": (
-        "Grounded strictly in the README fact sheet: ~50 categories, the "
-        "Auth/HTTPS/CORS columns, APILayer sponsorship and product table, MIT "
-        "license, Python tooling, and the companion API project. No hallucinated "
-        "benchmarks or adoption claims. Structure (5 headings) and length meet spec."
+        "Grounded strictly in the OpenClaw README: self-hosted single-user assistant, "
+        "the Gateway-as-control-plane framing, the ~two-dozen channels, voice (Voice "
+        "Wake / Talk Mode / ElevenLabs fallback), Live Canvas, the npm install + "
+        "onboard daemon, Node 24, multi-agent routing, the DM-pairing default, the "
+        "host-vs-sandbox tool-access model, openclaw doctor, OAuth/OpenAI models, and "
+        "skills/ClawHub. Star/fork/issue counts match the repo metadata. Five "
+        "headings; length within spec; no banned phrases."
+    ),
+})
+
+
+ENGAGEMENT_JSON = json.dumps({
+    "approved": True,
+    "attention_score": 8.7,
+    "voice_score": 8.6,
+    "severity": "low",
+    "issues": [
+        {
+            "type": "hook",
+            "severity": "low",
+            "text": "An AI assistant that reads your WhatsApp and can also run shell commands...",
+            "problem": "The opening sentence is long.",
+            "suggested_fix": "Kept deliberately: the length builds the useful-vs-dangerous contrast that is the thesis.",
+        }
+    ],
+    "recommended_action": "approve",
+    "notes": (
+        "Thesis-first opening that frames the real tension (useful vs dangerous) "
+        "instead of a throat-clear. The angle is distinctive and on-brand: the trust "
+        "boundary an agent-on-your-DMs creates, which most write-ups skip for a "
+        "feature list. Active voice, varied rhythm, concrete CLI/config detail, and "
+        "no filler or em-dash-heavy AI cadence."
     ),
 })
 
@@ -87,6 +129,8 @@ class ClaudeReplayClient(ModelClient):
 
     def complete(self, *, system: str, prompt: str, max_tokens: int = 2000,
                  temperature: float = 0.4, json_mode: bool = False) -> str:
+        if "TASK: ENGAGEMENT REVIEW" in prompt:
+            return ENGAGEMENT_JSON
         if "TASK: REVIEWER" in prompt:
             return REVIEW_JSON
         # WRITER (and REVISER, which shouldn't fire since we approve) -> the draft.
@@ -100,7 +144,7 @@ class OneShotSource:
 
 
 class NoopResearcher:
-    """Repo is already enriched from phase 1; don't refetch/overwrite."""
+    """Repo is already enriched by discover.py; don't refetch/overwrite."""
     def enrich(self, repo):
         return repo
 
@@ -116,7 +160,10 @@ def main() -> int:
         model=ClaudeReplayClient(),
         publishers=build_publishers(s),
     )
-    summary = pipe.run("2026-05-31", force=True)
+    # Unique run-date key so the per-day publish guard doesn't collide with the
+    # AutoGPT post already made for 2026-06-29, and won't block the scheduled
+    # cron's real 2026-06-30 run. (Manual daily-limit override for a 2nd post.)
+    summary = pipe.run("2026-06-29-openclaw", force=True)
     print(json.dumps(summary.to_dict(), ensure_ascii=False, indent=2))
     return 0 if summary.status in ("published", "dry_run") else 1
 

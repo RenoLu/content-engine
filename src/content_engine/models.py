@@ -72,6 +72,10 @@ class Repository:
     is_fork: bool = False
     default_branch: str = "main"
 
+    # Zero-based position on github.com/trending when sourced from the page
+    # (None when the repo came from the Search-API source). Used as a scoring signal.
+    trending_rank: int | None = None
+
     # ---- enrichment (filled by research/ranking stages) ----
     readme_markdown: str | None = None
     readme_len: int = 0
@@ -154,6 +158,38 @@ class ReviewResult:
             notes=str(d.get("notes", "")),
             model=str(d.get("model", "")),
         )
+
+
+@dataclass
+class EngagementReview:
+    """Structured output of the engagement/voice reviewer agent.
+
+    Scores two axes the fact-checking reviewer ignores: whether the piece
+    *catches attention* (hook, distinctive angle, reader pull) and whether it
+    *sounds human* (natural voice, active verbs, no AI-tells/filler). Reuses
+    ``ReviewIssue`` so its findings feed the existing reviser unchanged.
+    """
+
+    approved: bool
+    attention_score: float            # 0-10: hook, distinctive angle, reader pull
+    voice_score: float                # 0-10: human/natural, active voice, no AI-tells
+    severity: str                     # low | medium | high
+    issues: list[ReviewIssue] = field(default_factory=list)
+    recommended_action: str = "revise"  # approve | revise | reject
+    notes: str = ""
+    model: str = ""
+
+    @property
+    def overall_score(self) -> float:
+        """Weakest-link: both goals must hold, so the gate uses the lower axis."""
+        return min(self.attention_score, self.voice_score)
+
+    @property
+    def high_severity_issues(self) -> list[ReviewIssue]:
+        return [i for i in self.issues if i.severity == "high"]
+
+    def to_dict(self) -> dict[str, Any]:
+        return dataclasses.asdict(self)
 
 
 @dataclass

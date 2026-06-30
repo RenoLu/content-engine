@@ -31,11 +31,25 @@ DEFAULT_BANNED_PHRASES: list[str] = [
     "in today's fast-paced world", "in the world of", "look no further",
     "dive in", "delve into", "in conclusion", "in summary,",
     "as an ai", "i cannot", "elevate your", "seamlessly integrate",
+    # AI-tell filler / cliches (high-confidence; conservative to avoid false positives)
+    "it's worth noting", "it's important to note", "a testament to",
+    "ever-evolving", "in the realm of", "needless to say", "at the end of the day",
 ]
 
 # Built-in defaults mirror config/config.toml so the app runs even without it.
 _DEFAULTS: dict[str, Any] = {
     "source": {
+        # Which source supplies the daily candidate list:
+        #   "trending_html" -> parse the real github.com/trending page (falls back to search)
+        #   "search_api"    -> approximate trending via the GitHub Search API only
+        "provider": "trending_html",
+        "trending": {
+            "since": "daily",            # daily | weekly | monthly
+            "language": "",              # trending language tab, e.g. "python" ("" = all)
+            "spoken_language_code": "",  # e.g. "en" ("" = all)
+            "limit": 25,                 # how many trending rows to take
+            "min_results_fallback": 5,   # below this, fall back to / backfill from search_api
+        },
         "github": {
             "min_stars": 150,
             "rising_min_stars": 75,
@@ -44,6 +58,11 @@ _DEFAULTS: dict[str, Any] = {
             "per_query_limit": 50,
             "languages": [],
             "topics": [],
+            # When true, hard-filter to AI-related repos only (topic/keyword
+            # match in ranking/scorer.py). Default off; production enables it via
+            # the REQUIRE_AI_TOPIC env var (a workflow Variable). Off keeps the
+            # engine general-purpose and existing non-AI tests permissive.
+            "require_ai_topic": False,
             "preferred_topics": [
                 "llm", "ai", "machine-learning", "developer-tools", "cli",
                 "database", "kubernetes", "observability", "data-engineering",
@@ -70,6 +89,7 @@ _DEFAULTS: dict[str, Any] = {
         "weight_topic_match": 0.5,
         "weight_readme_quality": 0.3,
         "weight_has_homepage": 0.1,
+        "weight_trending_rank": 0.4,
     },
     "content": {
         "target_words_min": 450,
@@ -80,7 +100,18 @@ _DEFAULTS: dict[str, Any] = {
     "review": {
         "min_overall_score": 7.0,
         "block_on_high_severity": True,
-        "max_revisions": 1,
+        # Rewrite-until-pass cap: a draft that fails any gate is revised and
+        # re-checked up to this many rounds; if it never passes it is NOT
+        # published (status rejected/dry_run). Bounds cost/latency.
+        "max_revisions": 3,
+    },
+    "engagement": {
+        # Dedicated "catches attention / sounds human" review gate. enabled=false
+        # is a kill-switch reverting to the fact-checker-only behavior.
+        "enabled": True,
+        "min_attention_score": 6.5,
+        "min_voice_score": 6.5,
+        "block_on_high_severity": True,
     },
     "quality": {
         "banned_phrases": DEFAULT_BANNED_PHRASES,
@@ -113,7 +144,19 @@ class GitHubSourceConfig:
     per_query_limit: int
     languages: list[str]
     topics: list[str]
+    require_ai_topic: bool
     preferred_topics: list[str]
+
+
+@dataclass(frozen=True)
+class TrendingConfig:
+    """Tunables for the github.com/trending page source."""
+
+    since: str                    # daily | weekly | monthly
+    language: str                 # trending language tab ("" = all)
+    spoken_language_code: str     # e.g. "en" ("" = all)
+    limit: int                    # how many trending rows to take
+    min_results_fallback: int     # below this, fall back to / backfill from search_api
 
 
 @dataclass(frozen=True)
@@ -136,6 +179,7 @@ class ScoringConfig:
     weight_topic_match: float
     weight_readme_quality: float
     weight_has_homepage: float
+    weight_trending_rank: float
 
 
 @dataclass(frozen=True)
@@ -151,6 +195,14 @@ class ReviewConfig:
     min_overall_score: float
     block_on_high_severity: bool
     max_revisions: int
+
+
+@dataclass(frozen=True)
+class EngagementConfig:
+    enabled: bool
+    min_attention_score: float
+    min_voice_score: float
+    block_on_high_severity: bool
 
 
 @dataclass(frozen=True)
@@ -174,12 +226,15 @@ class Settings:
     output_dir: Path
     enabled_publishers: list[str]
     project_root: Path
+    source_provider: str              # "trending_html" | "search_api"
 
     github: GitHubSourceConfig
+    trending: TrendingConfig
     ranking: RankingConfig
     scoring: ScoringConfig
     content: ContentConfig
     review: ReviewConfig
+    engagement: EngagementConfig
     quality: QualityConfig
 
     # Raw environment snapshot for publisher-specific credentials.
@@ -228,10 +283,12 @@ def load_settings(
     cfg = _deep_merge(_DEFAULTS, file_cfg)
 
     gh = cfg["source"]["github"]
+    tr = cfg["source"]["trending"]
     rk = cfg["ranking"]
     sc = cfg["scoring"]
     ct = cfg["content"]
     rv = cfg["review"]
+    eng = cfg["engagement"]
     ql = cfg["quality"]
 
     def _str(key: str, default: str = "") -> str:
@@ -250,6 +307,34 @@ def load_settings(
     if not enabled:
         enabled = ["dryrun"]
 
+    # Source provider: TOML default, overridable by env (GITHUB_SOURCE).
+    source_provider = _str("GITHUB_SOURCE", str(cfg["source"].get("provider", "trending_html"))).strip().lower()
+    if source_provider not in ("trending_html", "search_api"):
+        source_provider = "trending_html"
+
+    # AI-only hard filter: TOML default, overridable by env (REQUIRE_AI_TOPIC).
+    def _flag(key: str, default: bool) -> bool:
+        v = env.get(key)
+        if v is None:
+            return default
+        return str(v).strip().lower() in ("1", "true", "yes", "on")
+
+    require_ai_topic = _flag("REQUIRE_AI_TOPIC", bool(gh.get("require_ai_topic", False)))
+
+    # Max repo age (days since creation): TOML default, overridable by env
+    # (MAX_REPO_AGE_DAYS). 0 = no max. Production sets ~60 so we only feature
+    # genuinely recent projects (~1-2 months old). See ranking.hard_filter_reason.
+    def _int_env(key: str, default: int) -> int:
+        v = env.get(key)
+        if v is None or str(v).strip() == "":
+            return default
+        try:
+            return int(str(v).strip())
+        except ValueError:
+            return default
+
+    max_repo_age_days = _int_env("MAX_REPO_AGE_DAYS", int(rk["max_repo_age_days"]))
+
     return Settings(
         publish_mode=publish_mode,
         ai_provider=ai_provider,
@@ -262,6 +347,7 @@ def load_settings(
         output_dir=output_dir,
         enabled_publishers=enabled,
         project_root=root,
+        source_provider=source_provider,
         github=GitHubSourceConfig(
             min_stars=int(gh["min_stars"]),
             rising_min_stars=int(gh["rising_min_stars"]),
@@ -270,7 +356,15 @@ def load_settings(
             per_query_limit=int(gh["per_query_limit"]),
             languages=list(gh["languages"]),
             topics=list(gh["topics"]),
+            require_ai_topic=require_ai_topic,
             preferred_topics=list(gh["preferred_topics"]),
+        ),
+        trending=TrendingConfig(
+            since=str(tr["since"]).strip().lower(),
+            language=str(tr["language"]).strip(),
+            spoken_language_code=str(tr["spoken_language_code"]).strip(),
+            limit=int(tr["limit"]),
+            min_results_fallback=int(tr["min_results_fallback"]),
         ),
         ranking=RankingConfig(
             min_stars=int(rk["min_stars"]),
@@ -279,7 +373,7 @@ def load_settings(
             skip_forks=bool(rk["skip_forks"]),
             allow_forks_min_stars=int(rk["allow_forks_min_stars"]),
             require_description=bool(rk["require_description"]),
-            max_repo_age_days=int(rk["max_repo_age_days"]),
+            max_repo_age_days=max_repo_age_days,
             blocklist=[str(b).lower() for b in rk["blocklist"]],
         ),
         scoring=ScoringConfig(
@@ -289,6 +383,7 @@ def load_settings(
             weight_topic_match=float(sc["weight_topic_match"]),
             weight_readme_quality=float(sc["weight_readme_quality"]),
             weight_has_homepage=float(sc["weight_has_homepage"]),
+            weight_trending_rank=float(sc["weight_trending_rank"]),
         ),
         content=ContentConfig(
             target_words_min=int(ct["target_words_min"]),
@@ -300,6 +395,12 @@ def load_settings(
             min_overall_score=float(rv["min_overall_score"]),
             block_on_high_severity=bool(rv["block_on_high_severity"]),
             max_revisions=int(rv["max_revisions"]),
+        ),
+        engagement=EngagementConfig(
+            enabled=bool(eng["enabled"]),
+            min_attention_score=float(eng["min_attention_score"]),
+            min_voice_score=float(eng["min_voice_score"]),
+            block_on_high_severity=bool(eng["block_on_high_severity"]),
         ),
         quality=QualityConfig(
             banned_phrases=[str(p).lower() for p in ql["banned_phrases"]],

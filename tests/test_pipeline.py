@@ -1,6 +1,13 @@
 import dataclasses
 
-from content_engine.models import Draft, Post, PublishResult, ReviewResult
+from content_engine.models import (
+    Draft,
+    EngagementReview,
+    Post,
+    PublishResult,
+    ReviewIssue,
+    ReviewResult,
+)
 from content_engine.pipeline import Pipeline
 from content_engine.publishers.base import BasePublisher
 from content_engine.sources.base import Source
@@ -86,12 +93,28 @@ def test_no_candidate_when_all_filtered(settings):
 
 
 def test_repo_not_reused_across_dates(settings):
-    # day 1 features acme/widget; day 2 should pick the other repo
+    # A *published* repo must not be reused: day 1 publishes acme/widget live,
+    # so day 2 should pick the other repo.
+    s = dataclasses.replace(settings, publish_mode="live")
     r1 = make_repo(full_name="acme/widget", stars=5000)
     r2 = make_repo(full_name="acme/gadget", name="gadget", stars=4000)
-    _pipeline(settings, repos=[r1, r2]).run("2026-05-31")
-    day2 = _pipeline(settings, repos=[r1, r2]).run("2026-06-01")
+    day1 = _pipeline(s, repos=[r1, r2], publishers=[RecordingPublisher(s)]).run("2026-05-31")
+    assert day1.status == "published"
+    assert day1.repo == "acme/widget"
+    day2 = _pipeline(s, repos=[r1, r2], publishers=[RecordingPublisher(s)]).run("2026-06-01")
     assert day2.repo == "acme/gadget"
+
+
+def test_dry_run_repo_is_reusable_across_dates(settings):
+    # A dry-run must NOT consume a repo (only a live publish does), so day 2 is
+    # free to pick the same top-ranked repo again.
+    r1 = make_repo(full_name="acme/widget", stars=5000)
+    r2 = make_repo(full_name="acme/gadget", name="gadget", stars=4000)
+    day1 = _pipeline(settings, repos=[r1, r2]).run("2026-05-31")
+    assert day1.status == "dry_run"
+    assert day1.repo == "acme/widget"
+    day2 = _pipeline(settings, repos=[r1, r2]).run("2026-06-01")
+    assert day2.repo == "acme/widget"  # still eligible — the dry-run didn't burn it
 
 
 def test_live_publishes_when_approved(settings):
@@ -209,3 +232,94 @@ def test_quality_gate_forces_revision_even_when_reviewer_approves(settings):
     # The revised draft is clean, so the run is approved and completes dry-run.
     assert summary.approved is True
     assert summary.status == "dry_run"
+
+
+# --- the engagement/voice gate rewrites until it passes, then publishes ---
+
+def _eng(approved, attention, voice, action="revise", severity="low", issues=None):
+    return EngagementReview(approved=approved, attention_score=attention,
+                            voice_score=voice, severity=severity,
+                            issues=issues or [], recommended_action=action)
+
+
+class _FlakyEngagementReviewer:
+    """Fails the first pass, then approves once the draft has been rewritten."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def review(self, repo, draft):
+        self.calls += 1
+        if self.calls == 1:
+            issue = ReviewIssue(type="hook", severity="medium", text="opening",
+                                problem="throat-clear opening", suggested_fix="lead with the thesis")
+            return _eng(False, 4.0, 4.0, issues=[issue])
+        return _eng(True, 8.5, 8.5, action="approve")
+
+    def is_approved(self, review):
+        return review.approved and review.attention_score >= 6.5 and review.voice_score >= 6.5
+
+
+class _FailingEngagementReviewer:
+    """Never satisfied — content can never pass the engagement bar."""
+
+    def review(self, repo, draft):
+        issue = ReviewIssue(type="hook", severity="high", text="opening",
+                            problem="no discernible angle", suggested_fix="rewrite the lead")
+        return _eng(False, 3.0, 3.0, severity="high", issues=[issue])
+
+    def is_approved(self, review):
+        return False
+
+
+def test_engagement_gate_forces_rewrite_until_pass(settings):
+    eng = _FlakyEngagementReviewer()
+    pipe = Pipeline(
+        settings,
+        source=FakeSource([make_repo()]),
+        researcher=NoopResearcher(),
+        engagement_reviewer=eng,
+        publishers=None,
+    )
+    summary = pipe.run("2026-05-31")
+    assert eng.calls >= 2                  # reviewed, failed, rewrote, re-reviewed
+    assert summary.approved is True
+    assert summary.status == "dry_run"
+    assert summary.attention_score == 8.5  # the passing round's scores surface
+    assert summary.voice_score == 8.5
+
+
+def test_persistent_low_engagement_blocks_live_publish(settings):
+    # In live mode, content that never clears the engagement bar must NOT post.
+    s = dataclasses.replace(settings, publish_mode="live")
+    rec = RecordingPublisher(s)
+    pipe = Pipeline(
+        s,
+        source=FakeSource([make_repo()]),
+        researcher=NoopResearcher(),
+        engagement_reviewer=_FailingEngagementReviewer(),
+        publishers=[rec],
+    )
+    summary = pipe.run("2026-05-31")
+    assert summary.approved is False
+    assert summary.status == "rejected"
+    assert rec.live_calls == []            # never shipped sub-par content
+
+
+def test_engagement_disabled_is_a_noop(settings):
+    # The kill-switch reverts to fact-checker-only behavior: a "failing" engagement
+    # reviewer is never consulted, so the happy path still publishes (dry-run).
+    s = dataclasses.replace(
+        settings, engagement=dataclasses.replace(settings.engagement, enabled=False),
+    )
+    pipe = Pipeline(
+        s,
+        source=FakeSource([make_repo()]),
+        researcher=NoopResearcher(),
+        engagement_reviewer=_FailingEngagementReviewer(),
+        publishers=None,
+    )
+    summary = pipe.run("2026-05-31")
+    assert summary.approved is True
+    assert summary.status == "dry_run"
+    assert summary.attention_score is None  # engagement didn't run

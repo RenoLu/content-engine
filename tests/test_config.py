@@ -43,3 +43,28 @@ def test_settings_loads_banned_phrases_lowercased():
     s = load_settings(env={}, load_dotenv_file=False)
     assert all(p == p.lower() for p in s.quality.banned_phrases)
     assert "game changer" in s.quality.banned_phrases
+
+
+def test_engagement_defaults_load():
+    s = load_settings(env={}, load_dotenv_file=False)
+    assert s.engagement.enabled is True
+    assert s.engagement.min_attention_score == 6.5
+    assert s.engagement.min_voice_score == 6.5
+    assert s.engagement.block_on_high_severity is True
+
+
+def test_max_revisions_default_is_three():
+    # "rewrite-until-pass" cap raised from 1 -> 3.
+    s = load_settings(env={}, load_dotenv_file=False)
+    assert s.review.max_revisions == 3
+
+
+def test_max_repo_age_days_default_off():
+    s = load_settings(env={}, load_dotenv_file=False)
+    assert s.ranking.max_repo_age_days == 0
+
+
+def test_max_repo_age_days_env_override():
+    # Production enables the recency filter via the env var.
+    s = load_settings(env={"MAX_REPO_AGE_DAYS": "60"}, load_dotenv_file=False)
+    assert s.ranking.max_repo_age_days == 60

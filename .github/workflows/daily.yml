@@ -1,12 +1,10 @@
 name: Daily content run
 
 on:
-  # Schedule disabled 2026-06-11: the trending pipeline has no funded model
-  # provider (AI_PROVIDER defaults to mock, whose output the quality gate
-  # rejects), so a daily cron only commits state noise. Re-enable once an
-  # ANTHROPIC_API_KEY/OPENAI_API_KEY with quota is configured:
-  # schedule:
-  #   - cron: "0 14 * * *"
+  schedule:
+    # 14:00 UTC daily (2h after palisade's 12:00). Re-enabled 2026-06-29 now that
+    # ANTHROPIC_API_KEY is funded; scoped to AI repos via REQUIRE_AI_TOPIC.
+    - cron: "0 14 * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -34,6 +32,8 @@ jobs:
       PUBLISH_MODE: ${{ github.event.inputs.mode || vars.PUBLISH_MODE || 'dry_run' }}
       AI_PROVIDER: ${{ vars.AI_PROVIDER || 'mock' }}
       ENABLED_PUBLISHERS: ${{ vars.ENABLED_PUBLISHERS || 'dryrun' }}
+      REQUIRE_AI_TOPIC: ${{ vars.REQUIRE_AI_TOPIC || 'false' }}
+      MAX_REPO_AGE_DAYS: ${{ vars.MAX_REPO_AGE_DAYS || '60' }}
       OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
       ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
       # --- secrets (set as repo *Secrets*). GITHUB_TOKEN falls back to the

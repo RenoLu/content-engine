@@ -1,7 +1,26 @@
+import dataclasses
+from datetime import datetime, timedelta, timezone
+
 from content_engine.ranking import RepoRanker, hard_filter_reason, score_repo
 from content_engine.ranking.scorer import readme_filter_reason
 
 from .conftest import make_repo
+
+
+def _ai_required(settings):
+    """A copy of settings with the AI-only hard filter turned on."""
+    gh = dataclasses.replace(settings.github, require_ai_topic=True)
+    return dataclasses.replace(settings, github=gh)
+
+
+def _with_max_age(settings, days):
+    """A copy of settings with the recency (max-age) hard filter turned on."""
+    rk = dataclasses.replace(settings.ranking, max_repo_age_days=days)
+    return dataclasses.replace(settings, ranking=rk)
+
+
+def _created_days_ago(days):
+    return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
 
 
 def test_hard_filter_passes_good_repo(settings):
@@ -53,6 +72,51 @@ def test_score_breakdown_keys(settings):
     _, breakdown = score_repo(make_repo(), settings.scoring, settings.github.preferred_topics)
     assert {"stars", "recent_push", "rising", "topic_match", "readme_quality",
             "has_homepage"} <= set(breakdown)
+
+
+def test_require_ai_topic_off_is_noop(settings):
+    # Committed default is off → a non-AI repo passes the hard filter.
+    assert settings.github.require_ai_topic is False
+    repo = make_repo(topics=["database"], description="A relational database.")
+    assert hard_filter_reason(repo, settings) is None
+
+
+def test_hard_filter_rejects_non_ai_when_required(settings):
+    s = _ai_required(settings)
+    repo = make_repo(name="db", description="A fast embedded SQL database engine.",
+                     topics=["database", "rust", "cli"])
+    assert hard_filter_reason(repo, s) == "not_ai"
+
+
+def test_hard_filter_passes_ai_repo_by_topic(settings):
+    s = _ai_required(settings)
+    assert hard_filter_reason(make_repo(topics=["llm", "rag", "agents"]), s) is None
+
+
+def test_hard_filter_passes_ai_repo_by_keyword_when_untagged(settings):
+    s = _ai_required(settings)
+    repo = make_repo(name="autogpt",
+                     description="An autonomous LLM agent framework.", topics=[])
+    assert hard_filter_reason(repo, s) is None
+
+
+def test_max_repo_age_off_is_noop(settings):
+    # Committed default is 0 (off) → an old repo passes the hard filter.
+    assert settings.ranking.max_repo_age_days == 0
+    old = make_repo(created_at=_created_days_ago(400))
+    assert hard_filter_reason(old, settings) is None
+
+
+def test_hard_filter_rejects_old_when_max_age_set(settings):
+    s = _with_max_age(settings, 60)
+    old = make_repo(created_at=_created_days_ago(200))
+    assert hard_filter_reason(old, s) == "too_old"
+
+
+def test_hard_filter_passes_recent_when_max_age_set(settings):
+    s = _with_max_age(settings, 60)
+    recent = make_repo(created_at=_created_days_ago(15))
+    assert hard_filter_reason(recent, s) is None
 
 
 def test_ranker_orders_eligible_first(settings):

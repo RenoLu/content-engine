@@ -15,11 +15,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .agents import ReviewerAgent, ReviserAgent, WriterAgent, build_model_client
+from .agents import (
+    EngagementReviewer,
+    ReviewerAgent,
+    ReviserAgent,
+    WriterAgent,
+    build_model_client,
+)
 from .config import Settings
 from .logging_setup import get_logger
 from .models import (
     Draft,
+    EngagementReview,
     Post,
     PublishResult,
     Repository,
@@ -34,8 +41,8 @@ from .publishers.base import BasePublisher
 from .quality import QualityReport, run_quality_checks
 from .ranking import RepoRanker, readme_filter_reason
 from .research import RepoResearcher
+from .sources import build_source
 from .sources.base import Source
-from .sources.github import GitHubTrendingSource
 from .storage import Store
 
 log = get_logger(__name__)
@@ -52,6 +59,8 @@ class PipelineSummary:
     repo: str | None = None
     score: float | None = None
     review_score: float | None = None
+    attention_score: float | None = None
+    voice_score: float | None = None
     approved: bool = False
     skip_reason: str | None = None
     message: str = ""
@@ -65,6 +74,8 @@ class PipelineSummary:
             "repo": self.repo,
             "score": self.score,
             "review_score": self.review_score,
+            "attention_score": self.attention_score,
+            "voice_score": self.voice_score,
             "approved": self.approved,
             "skip_reason": self.skip_reason,
             "message": self.message,
@@ -83,16 +94,18 @@ class Pipeline:
         model=None,
         writer: WriterAgent | None = None,
         reviewer: ReviewerAgent | None = None,
+        engagement_reviewer: EngagementReviewer | None = None,
         reviser: ReviserAgent | None = None,
         publishers: list[BasePublisher] | None = None,
     ):
         self.settings = settings
         self.store = store or Store(settings.db_path)
-        self.source = source or GitHubTrendingSource(settings)
+        self.source = source or build_source(settings)
         self.researcher = researcher or RepoResearcher(settings)
         self.model = model or build_model_client(settings)
         self.writer = writer or WriterAgent(self.model, settings)
         self.reviewer = reviewer or ReviewerAgent(self.model, settings)
+        self.engagement_reviewer = engagement_reviewer or EngagementReviewer(self.model, settings)
         self.reviser = reviser or ReviserAgent(self.model, settings)
         self.publishers = publishers if publishers is not None else build_publishers(settings)
 
@@ -158,14 +171,16 @@ class Pipeline:
         # 4. write
         draft = self.writer.write(selected)
 
-        # 5. review + deterministic quality gate (+ optional revision rounds)
+        # 5. review + engagement review + deterministic quality gate (+ revisions)
         self.store.set_status(run_date, RunStatus.REVIEWING)
-        draft, review, quality = self._review_and_revise(run_date, selected, draft)
+        draft, review, eng, quality = self._review_and_revise(run_date, selected, draft)
 
-        # 6. final gate: publish only if reviewer approves AND quality passes
-        approved = self.reviewer.is_approved(review) and quality.passed
-        log.info("gate: reviewer_ok=%s quality_ok=%s -> approved=%s",
-                 self.reviewer.is_approved(review), quality.passed, approved)
+        # 6. final gate: publish only if the fact reviewer AND the engagement
+        #    reviewer approve AND the deterministic quality gate passes.
+        eng_ok = self._engagement_ok(eng)
+        approved = self.reviewer.is_approved(review) and eng_ok and quality.passed
+        log.info("gate: reviewer_ok=%s engagement_ok=%s quality_ok=%s -> approved=%s",
+                 self.reviewer.is_approved(review), eng_ok, quality.passed, approved)
 
         self.store.update_run(
             run_date,
@@ -174,6 +189,7 @@ class Pipeline:
             final_json={
                 "draft": draft.to_dict(),
                 "review": review.to_dict(),
+                "engagement": eng.to_dict() if eng else None,
                 "quality": quality.to_dict(),
                 "approved": approved,
             },
@@ -183,23 +199,24 @@ class Pipeline:
         post = Post.from_draft(draft, repo=selected)
         results, final_status = self._publish(run_date, post, mode, approved)
 
-        # 8. persist terminal status + dedup history
+        # 8. persist terminal status + dedup history.
+        # Only a genuine live publish "consumes" a repo (no-repeat guard). A
+        # dry-run, rejection, or failure leaves the repo eligible for a future
+        # run — mirrors the publisher guard where a dry-run must not block a
+        # later live post. See store.used_repo_names / hard_filter_reason.
         self.store.set_status(run_date, final_status)
-        history_status = {
-            RunStatus.PUBLISHED: "published",
-            RunStatus.DRY_RUN: "dry_run",
-            RunStatus.REJECTED: "rejected",
-            RunStatus.FAILED: "failed",
-        }.get(final_status)
-        if history_status:
-            self.store.mark_repo_used(selected.full_name, run_date, history_status)
+        if final_status == RunStatus.PUBLISHED:
+            self.store.mark_repo_used(selected.full_name, run_date, "published")
 
         return PipelineSummary(
             run_date=run_date, status=final_status.value, mode=mode,
             repo=selected.full_name, score=selected.score,
-            review_score=review.overall_score, approved=approved,
+            review_score=review.overall_score,
+            attention_score=eng.attention_score if eng else None,
+            voice_score=eng.voice_score if eng else None,
+            approved=approved,
             publish_results=results,
-            message=self._summary_message(final_status, quality, review),
+            message=self._summary_message(final_status, quality, review, eng),
         )
 
     def _select(self, ranked: list[Repository], ranker: RepoRanker) -> Repository | None:
@@ -220,31 +237,73 @@ class Pipeline:
             return repo
         return None
 
-    def _review_and_revise(self, run_date: str, repo: Repository,
-                           draft: Draft) -> tuple[Draft, ReviewResult, QualityReport]:
-        """Run review + deterministic quality gate, revising while either fails.
+    def _review_and_revise(
+        self, run_date: str, repo: Repository, draft: Draft
+    ) -> tuple[Draft, ReviewResult, EngagementReview | None, QualityReport]:
+        """Run all three gates, rewriting while any of them fails.
 
-        The revision loop is driven by BOTH the AI reviewer and the deterministic
-        quality gate, so fixable issues the reviewer waves through (banned
-        phrases, too-few headings, length) get a revision attempt with that
-        feedback instead of becoming a terminal rejection.
+        The loop is driven by the fact reviewer, the engagement/voice reviewer
+        (when enabled), AND the deterministic quality gate, so a dull, robotic, or
+        rule-tripping draft is rewritten with that feedback and re-checked — up to
+        ``review.max_revisions`` rounds. A draft that never passes is left
+        un-approved (the caller refuses to publish it) rather than shipped sub-par.
+        A reviewer's terminal ``reject`` short-circuits the loop.
         """
+        eng_enabled = self.settings.engagement.enabled
         review = self.reviewer.review(repo, draft)
+        eng = self.engagement_reviewer.review(repo, draft) if eng_enabled else None
         quality = run_quality_checks(draft, repo, self.settings)
         rounds = 0
         while rounds < self.settings.review.max_revisions:
-            if self.reviewer.is_approved(review) and quality.passed:
+            if self.reviewer.is_approved(review) and self._engagement_ok(eng) and quality.passed:
                 break
-            if review.recommended_action == "reject":
+            if review.recommended_action == "reject" or (
+                eng is not None and eng.recommended_action == "reject"
+            ):
                 break
             rounds += 1
-            log.info("revision round %d (score=%.1f, quality_ok=%s)",
-                     rounds, review.overall_score, quality.passed)
+            log.info("revision round %d (review=%.1f, attention=%s, voice=%s, quality_ok=%s)",
+                     rounds, review.overall_score,
+                     f"{eng.attention_score:.1f}" if eng else "n/a",
+                     f"{eng.voice_score:.1f}" if eng else "n/a", quality.passed)
             self.store.set_status(run_date, RunStatus.REVISING)
-            draft = self.reviser.revise(repo, draft, review, quality_issues=quality.blocking)
+            draft = self.reviser.revise(
+                repo, draft, review, quality_issues=self._reviser_issues(quality, eng)
+            )
             review = self.reviewer.review(repo, draft)
+            eng = self.engagement_reviewer.review(repo, draft) if eng_enabled else None
             quality = run_quality_checks(draft, repo, self.settings)
-        return draft, review, quality
+        return draft, review, eng, quality
+
+    def _engagement_ok(self, eng: EngagementReview | None) -> bool:
+        """True when engagement review is disabled (no-op) or the reviewer approves."""
+        if not self.settings.engagement.enabled or eng is None:
+            return True
+        return self.engagement_reviewer.is_approved(eng)
+
+    def _reviser_issues(self, quality: QualityReport,
+                        eng: EngagementReview | None) -> list[str]:
+        """Combine deterministic quality failures with engagement feedback into the
+        single must-fix list handed to the reviser."""
+        issues = list(quality.blocking)
+        if eng is not None and not self._engagement_ok(eng):
+            e = self.settings.engagement
+            if eng.attention_score < e.min_attention_score:
+                issues.append(
+                    f"engagement/attention: attention_score {eng.attention_score:.1f} < "
+                    f"{e.min_attention_score} — open with a sharper thesis and a more "
+                    "distinctive angle.")
+            if eng.voice_score < e.min_voice_score:
+                issues.append(
+                    f"engagement/voice: voice_score {eng.voice_score:.1f} < "
+                    f"{e.min_voice_score} — use active voice, vary the rhythm, and cut "
+                    "filler/AI-cadence.")
+            issues += [
+                f"engagement/{i.type} [{i.severity}]: {i.problem}"
+                + (f" (fix: {i.suggested_fix})" if i.suggested_fix else "")
+                for i in eng.issues
+            ]
+        return issues
 
     def _publish(self, run_date: str, post: Post, mode: str,
                  approved: bool) -> tuple[list[PublishResult], RunStatus]:
@@ -287,13 +346,19 @@ class Pipeline:
             return results, RunStatus.PUBLISHED if posted else RunStatus.FAILED
         return results, RunStatus.DRY_RUN
 
-    @staticmethod
-    def _summary_message(status: RunStatus, quality: QualityReport,
-                         review: ReviewResult) -> str:
+    def _summary_message(self, status: RunStatus, quality: QualityReport,
+                         review: ReviewResult, eng: EngagementReview | None = None) -> str:
         if status == RunStatus.REJECTED:
             reasons = list(quality.blocking)
             if review.high_severity_issues:
                 reasons.append(f"{len(review.high_severity_issues)} high-severity review issue(s)")
+            if eng is not None and not self._engagement_ok(eng):
+                if eng.high_severity_issues:
+                    reasons.append(
+                        f"{len(eng.high_severity_issues)} high-severity engagement issue(s)")
+                reasons.append(
+                    f"low engagement (attention={eng.attention_score:.1f}, "
+                    f"voice={eng.voice_score:.1f})")
             return "content rejected: " + ("; ".join(reasons) or "did not meet review bar")
         if status == RunStatus.DRY_RUN:
             return "dry-run complete (nothing posted externally)"

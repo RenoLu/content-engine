@@ -90,6 +90,8 @@ def _format_summary(summary) -> str:
         f" repo     : {summary.repo or '-'}",
         f" score    : {summary.score if summary.score is not None else '-'}",
         f" review   : {summary.review_score if summary.review_score is not None else '-'}",
+        f" attention: {summary.attention_score if summary.attention_score is not None else '-'}",
+        f" voice    : {summary.voice_score if summary.voice_score is not None else '-'}",
         f" approved : {summary.approved}",
         f" message  : {summary.message}",
     ]
