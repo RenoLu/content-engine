@@ -18,7 +18,7 @@ on:
         description: "Outreach mode"
         type: choice
         options: [dry_run, live]
-        default: dry_run
+        default: live
       platforms:
         description: "Comma-separated platforms"
         default: "bluesky,mastodon,devto"
@@ -34,15 +34,18 @@ jobs:
   engage:
     runs-on: ubuntu-latest
     env:
-      # Scheduled runs are dry_run; a live run must be chosen via manual dispatch.
-      OUTREACH_MODE: ${{ github.event.inputs.mode || 'dry_run' }}
+      # Scheduled runs engage live; a dry_run must be chosen via manual dispatch.
+      OUTREACH_MODE: ${{ github.event.inputs.mode || 'live' }}
       OUTREACH_PLATFORMS: ${{ github.event.inputs.platforms || 'bluesky,mastodon,devto' }}
       OUTREACH_ENABLED: "true"
-      # Cost guard: only a manual LIVE dispatch uses the paid model. Scheduled and
-      # dry_run runs use the free mock provider (replies get gated out; discovery +
-      # likes/follows still exercised) so no Anthropic credit is ever spent
-      # automatically.
-      AI_PROVIDER: ${{ github.event.inputs.mode == 'live' && 'anthropic' || 'mock' }}
+      # Conservative start: cap every daily limit to a quarter until the account
+      # health looks clean, then raise via this Variable. Bounds both actions and
+      # (paid) model calls per run.
+      OUTREACH_CAP_SCALE: ${{ vars.OUTREACH_CAP_SCALE || '0.5' }}
+      # Cost guard: a dry_run dispatch uses the free mock provider (no credit);
+      # live (scheduled or dispatched) uses the paid model for real replies. Reply
+      # count per run is bounded by the per-platform reply cap.
+      AI_PROVIDER: ${{ github.event.inputs.mode == 'dry_run' && 'mock' || 'anthropic' }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       DB_PATH: "data/outreach.sqlite3"
       BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
