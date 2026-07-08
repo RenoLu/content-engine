@@ -48,9 +48,22 @@ One engine, one adapter per platform, mirroring the publisher pattern:
 | DEV.to   | articles    | — | — | — | yes (discover only) |
 | LinkedIn | Kimi WebBridge | ✓ | connect | ✓ | **no — local only** |
 
-LinkedIn has no sanctioned engagement API, so its adapter drives the user's real
-browser session via Kimi WebBridge and must run locally, never in CI. It is a
-documented follow-up, not part of the API-platform MVP.
+LinkedIn has no sanctioned engagement API, so its adapter (`linkedin_kimi.py`)
+drives the user's real browser session via Kimi WebBridge and must run locally,
+never in CI:
+
+```bash
+# needs the Kimi WebBridge daemon running + you logged into LinkedIn
+OUTREACH_MODE=dry_run python -m content_engine.outreach.linkedin_kimi
+```
+
+It reuses the same store (dedupe/caps) and commenter (quality-gated replies) as
+the API adapters. LinkedIn search results have no stable per-post URN, so a
+target's dedupe key is a hash of author + post text; actions target the Nth post
+by its like-button ordinal. Discovery is non-destructive and verified; the first
+LIVE run (real likes/comments from your account) should be supervised, and the
+Anthropic model needs credit for replies. LinkedIn caps are the lowest of any
+platform on purpose. Status: experimental.
 
 ## Credential requirements (gotchas)
 
