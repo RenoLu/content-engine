@@ -83,6 +83,7 @@ class OutreachEngine:
             # number of (paid) model calls, even when the quality gate rejects
             # drafts. Better to under-reply than to overspend on the model.
             self._run_counts[(platform, "reply")] += 1
+            comment = ""
             try:
                 comment = self.commenter.generate(
                     platform=platform, text=target.text, author=target.author_handle)
@@ -92,7 +93,13 @@ class OutreachEngine:
                                    detail=f"quality gate: {exc}")
                 self.store.record(res, author=target.author_handle)
                 results.append(res)
-                comment = ""
+            except Exception as exc:  # noqa: BLE001 - a model outage/credit error
+                # must never crash the run or block likes/follows. Skip the reply.
+                res = ActionResult(platform=platform, action_type=ActionType.REPLY,
+                                   target_key=target.key, status="skipped",
+                                   detail=f"reply generation failed: {type(exc).__name__}")
+                self.store.record(res, author=target.author_handle)
+                results.append(res)
             if comment:
                 res = adapter.act(Action(platform, ActionType.REPLY, target, comment=comment))
                 self.store.record(res, comment=comment, author=target.author_handle)

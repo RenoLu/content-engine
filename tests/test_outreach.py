@@ -202,6 +202,34 @@ def test_engine_kill_switch(settings):
     assert adapter.executed == []
 
 
+class BoomModel:
+    """A model client that always fails (simulates outage / no credits)."""
+
+    def complete(self, **kwargs):
+        raise RuntimeError("Anthropic 400: credit balance too low")
+
+
+def test_engine_survives_model_failure(settings):
+    """A model outage must not crash the run or block likes/follows."""
+    config = cfg(settings, mode="live")
+    targets = make_targets(3)
+    adapter = FakeAdapter(settings, config, targets=targets)
+    store = OutreachStore(":memory:")
+    engine = OutreachEngine(config, store, sleeper=lambda s: None, model_client=BoomModel())
+    import content_engine.outreach.engine as eng_mod
+    orig = eng_mod.build_adapter
+    eng_mod.build_adapter = lambda name, s, c, http=None: adapter
+    try:
+        summary = engine.run()  # must not raise
+    finally:
+        eng_mod.build_adapter = orig
+    # likes still happened; replies were skipped (not crashed)
+    assert any(a == "like" for a, _ in adapter.executed)
+    assert all(a != "reply" for a, _ in adapter.executed)
+    acts = summary["platforms"]["bluesky"]["actions"]
+    assert acts["reply"]["skipped"] >= 1
+
+
 def test_engine_approval_mode_drafts_not_executes(settings):
     config = cfg(settings, mode="live", approval=True)
     adapter = FakeAdapter(settings, config, targets=make_targets(4))
