@@ -98,3 +98,16 @@ def test_linkedin_reports_kimi_down(settings):
                                 kimi=DownKimi(POSTS), sleeper=lambda s: None)
     out = runner.run()
     assert "error" in out
+
+
+def test_exclusion_rule_targets_strangers_only():
+    from content_engine.outreach.linkedin_kimi import _exclusion_reason
+    # fair game: a stranger you can follow, not a former employer
+    assert _exclusion_reason({"canFollow": True, "actor": "Jane Doe 3rd+ Data Engineer at Acme"}) is None
+    # already following/connected (no follow button)
+    assert _exclusion_reason({"canFollow": False, "actor": "Jane Doe 2nd Data Engineer"})
+    # a 1st-degree connection (someone you know)
+    assert _exclusion_reason({"canFollow": True, "actor": "Bob Smith 1st Founder"})
+    # currently at a former employer
+    assert _exclusion_reason({"canFollow": True, "actor": "Sam Lee 3rd+ Quant at Susquehanna"})
+    assert _exclusion_reason({"canFollow": True, "actor": "Amy Ng 2nd Nurse at Penn Medicine"})

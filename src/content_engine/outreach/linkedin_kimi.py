@@ -85,6 +85,32 @@ def _key(author: str, text: str) -> str:
 
 import re as _re
 
+# Per Yan's rule, LinkedIn engagement targets strangers only: people he does NOT
+# already follow or know (1st-degree connections), and nobody currently at a
+# company he has worked for. Former employers come from the job-app exclude list.
+_FORMER_EMPLOYERS = (
+    "grayscale", "susquehanna", "sig ", "(sig)", "fis ", "fidelity national",
+    "checkpoint systems", "penn medicine", "university of pennsylvania", "upenn",
+)
+
+_FIRST_DEGREE_RE = _re.compile(r"(^|[^0-9])1st([^a-z0-9]|$)", _re.IGNORECASE)
+
+
+def _exclusion_reason(row: dict) -> str | None:
+    """Return why a LinkedIn author is off-limits, or None if fair game.
+
+    Skips people already followed/connected and anyone at a former employer, so
+    engagement only reaches new, unknown people (per Yan's LinkedIn rule)."""
+    if not row.get("canFollow"):
+        return "already following or connected"
+    actor = (row.get("actor") or "").lower()
+    if _FIRST_DEGREE_RE.search(actor):
+        return "1st-degree connection"
+    for emp in _FORMER_EMPLOYERS:
+        if emp in actor:
+            return f"former employer ({emp.strip()})"
+    return None
+
 # LinkedIn search cards prefix the body with chrome like "Feed post <Author> •
 # 3rd+ <headline> • Follow ". Strip that so the reply model sees the actual post.
 _CHROME_RE = _re.compile(r"^Feed post .*?•.*?(?:•\s*Follow\s*)?", _re.IGNORECASE)
@@ -115,7 +141,11 @@ _EXTRACT_JS = r"""
     else if(followBtn){author=(followBtn.getAttribute('aria-label')||'').replace(/^Follow /,'');}
     const textEl=card?card.querySelector('.update-components-text, .feed-shared-update-v2__description, span[dir="ltr"]'):null;
     const text=textEl?(textEl.innerText||'').replace(/\s+/g,' ').trim():(card?(card.innerText||'').replace(/\s+/g,' ').slice(0,400):'');
-    posts.push({i, author, text, canFollow: !!followBtn});
+    // the actor block carries the connection degree (1st/2nd/3rd+) and headline,
+    // which we use to skip connections and former-employer colleagues
+    const actorEl=card?card.querySelector('.update-components-actor__meta, .update-components-actor'):null;
+    const actor=actorEl?(actorEl.innerText||'').replace(/\s+/g,' ').trim():'';
+    posts.push({i, author, text, canFollow: !!followBtn, actor});
   });
   return JSON.stringify(posts.slice(0,25));
 })()
@@ -177,6 +207,10 @@ class LinkedInKimiRunner:
             text = _clean_post_text(r.get("text") or "")
             author = (r.get("author") or "").strip()
             if not text:
+                continue
+            reason = _exclusion_reason(r)
+            if reason:
+                log.info("linkedin: skip %s (%s)", author or "?", reason)
                 continue
             out.append(Target(
                 platform=self.name, key=_key(author, text), text=text,
