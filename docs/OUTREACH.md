@@ -45,8 +45,12 @@ One engine, one adapter per platform, mirroring the publisher pattern:
 |----------|----------|------|--------|-------|-----------|
 | Bluesky  | searchPosts | ✓ | ✓ | ✓ | yes |
 | Mastodon | search/tag  | ✓ (favourite) | ✓ | ✓ | yes |
-| DEV.to   | articles    | — | — | — | yes (discover only) |
+| DEV.to   | articles (API) | ✓ (via Kimi) | ✓ (via Kimi) | ✓ (via Kimi) | **no — local only** |
 | LinkedIn | Kimi WebBridge | ✓ | connect | ✓ | **no — local only** |
+
+DEV.to's public API can read/publish articles but has no reaction/comment/follow
+endpoint, so engagement runs through the logged-in browser via `devto_kimi.py`
+(discovery still uses the free API). Like LinkedIn, it is local-only, never CI.
 
 LinkedIn has no sanctioned engagement API, so its adapter (`linkedin_kimi.py`)
 drives the user's real browser session via Kimi WebBridge and must run locally,

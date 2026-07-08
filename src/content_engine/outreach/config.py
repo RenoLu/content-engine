@@ -45,7 +45,9 @@ class PlatformCaps:
 _DEFAULT_CAPS: dict[str, dict[str, int]] = {
     "bluesky": {"like": 20, "follow": 10, "reply": 8},
     "mastodon": {"like": 20, "follow": 10, "reply": 8},
-    "devto": {"like": 0, "follow": 0, "reply": 0},
+    # DEV.to engagement runs through the browser (devto_kimi), not the API; the
+    # API adapter stays discover-only. Comments are effortful, so keep it modest.
+    "devto": {"like": 15, "follow": 6, "reply": 6},
     "linkedin": {"like": 8, "follow": 4, "reply": 3},
 }
 
