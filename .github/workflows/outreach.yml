@@ -1,0 +1,79 @@
+name: Outreach (engagement)
+
+# Engagement automation: like / follow / reply across API-friendly platforms
+# (Bluesky, Mastodon; DEV.to discover-only). LinkedIn is NOT here — it has no
+# sanctioned API and must run locally via Kimi WebBridge on the real browser
+# session. See docs/OUTREACH.md.
+#
+# Safety: the SCHEDULED run is dry_run (discover + draft, never acts). Flip to
+# live deliberately via workflow_dispatch once caps/creds are dialed in. The
+# engine still enforces caps, dedupe, and the reply quality gate in every mode.
+
+on:
+  schedule:
+    - cron: "30 14 * * *"   # 14:30 UTC — offset from the publish/palisade jobs
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Outreach mode"
+        type: choice
+        options: [dry_run, live]
+        default: dry_run
+      platforms:
+        description: "Comma-separated platforms"
+        default: "bluesky,mastodon,devto"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: outreach
+  cancel-in-progress: false
+
+jobs:
+  engage:
+    runs-on: ubuntu-latest
+    env:
+      # Scheduled runs are dry_run; a live run must be chosen via manual dispatch.
+      OUTREACH_MODE: ${{ github.event.inputs.mode || 'dry_run' }}
+      OUTREACH_PLATFORMS: ${{ github.event.inputs.platforms || 'bluesky,mastodon,devto' }}
+      OUTREACH_ENABLED: "true"
+      # Cost guard: only a manual LIVE dispatch uses the paid model. Scheduled and
+      # dry_run runs use the free mock provider (replies get gated out; discovery +
+      # likes/follows still exercised) so no Anthropic credit is ever spent
+      # automatically.
+      AI_PROVIDER: ${{ github.event.inputs.mode == 'live' && 'anthropic' || 'mock' }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DB_PATH: "data/outreach.sqlite3"
+      BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+      BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+      MASTODON_BASE_URL: ${{ secrets.MASTODON_BASE_URL }}
+      MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Run outreach
+        run: python -m content_engine.outreach
+
+      - name: Persist engagement log
+        if: always()
+        run: |
+          git config user.name "content-engine[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/outreach.sqlite3 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "no engagement-log changes to commit"
+          else
+            git commit -m "chore: outreach log $(date -u +%F) [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin main && git push && break
+              echo "push retry $i"; sleep 3
+            done
+          fi

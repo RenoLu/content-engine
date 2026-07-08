@@ -114,3 +114,39 @@ banned_phrases = [
 max_banned_phrase_hits = 0    # any banned phrase blocks publishing in live mode
 require_repo_name_in_body = true
 min_headings = 2
+
+[outreach]
+# Engagement automation (like / follow / reply across platforms). Separate from
+# [engagement] above, which is the content quality-review gate. See docs/OUTREACH.md.
+# Secrets + run mode come from env (OUTREACH_MODE, OUTREACH_ENABLED, creds).
+enabled = true                 # kill switch (env OUTREACH_ENABLED overrides)
+approval = false               # true = draft only, log as pending_approval
+platforms = ["bluesky", "mastodon", "devto"]
+per_query_limit = 15           # targets fetched per query per platform
+like_ratio = 0.8               # fraction of eligible targets to like
+reply_ratio = 0.35             # fraction of eligible targets to reply to
+seed = 1337                    # deterministic sampling/pacing seed
+
+# Topic queries used to discover posts/people worth engaging.
+queries = [
+    "data engineering", "lakehouse", "streaming ML", "MLOps",
+    "AI agents", "LLM applications", "quant", "iceberg",
+]
+
+# Per-platform DAILY caps. Start conservative and raise only if clean. LinkedIn is
+# intentionally lowest (it penalizes automation). Scale all at once with env
+# OUTREACH_CAP_SCALE.
+[outreach.caps.bluesky]
+like = 20
+follow = 10
+reply = 8
+
+[outreach.caps.mastodon]
+like = 20
+follow = 10
+reply = 8
+
+[outreach.caps.linkedin]
+like = 8
+follow = 4
+reply = 3

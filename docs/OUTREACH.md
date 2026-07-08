@@ -1,0 +1,66 @@
+# Outreach (engagement automation)
+
+The `outreach` package grows Yan Lu's reach by *engaging* with other people's
+content across platforms: liking, following, and posting genuinely contextual
+replies. It is separate from the content pipeline (which *authors* posts) and
+from the `[engagement]` config section (which is the content quality-review gate,
+an unrelated concept that happens to share the word).
+
+## Design
+
+One engine, one adapter per platform, mirroring the publisher pattern:
+
+- `models.py` — `Target` (a post/person to engage), `Action` (like/follow/reply +
+  optional comment), `ActionResult`.
+- `base.py` — `BaseAdapter`: `discover()`, `like()`, `follow()`, `reply()`. Dry-run
+  and failure-containment are handled once in the base, exactly like `BasePublisher`,
+  so an adapter can never accidentally act during a dry run and one broken platform
+  never aborts the run.
+- `bluesky.py`, `mastodon.py`, `devto.py` — platform adapters. DEV.to is
+  discover-only (its API exposes no sanctioned like/comment write).
+- `commenter.py` — generates a contextual reply via the shared model client and
+  runs a quality gate (reuses the banned-phrase list) so no generic "Great post!"
+  ever ships.
+- `store.py` — `OutreachStore`: an sqlite `engagement_log` that enforces **dedupe**
+  (never engage the same target+action twice) and backs the **daily caps**.
+- `engine.py` — orchestrates: discover -> dedupe -> cap -> (comment + quality gate)
+  -> act -> log, with human-like pacing.
+- `config.py` — `OutreachConfig`, read from env + `[outreach]` in config.toml. Kept
+  out of the core `Settings` dataclass to keep the footprint small.
+
+## Guardrails (load-bearing)
+
+- **Dry-run by default** (`OUTREACH_MODE=dry_run`). Live requires an explicit flip.
+- **Kill switch**: `OUTREACH_ENABLED=false` halts everything.
+- **Per-platform daily caps** (likes/follows/replies), enforced from the log.
+- **Dedupe**: `UNIQUE(platform, target_key, action_type)` in the log.
+- **Approval mode** (`OUTREACH_APPROVAL=true`): actions are drafted and logged as
+  `pending_approval` instead of executed. Ships OFF (full-auto) per the plan.
+- **Pacing**: randomized delay between actions (seeded per-run, no wall-clock RNG
+  in tests).
+
+## Platforms
+
+| Platform | Discover | Like | Follow | Reply | Runs in CI |
+|----------|----------|------|--------|-------|-----------|
+| Bluesky  | searchPosts | ✓ | ✓ | ✓ | yes |
+| Mastodon | search/tag  | ✓ (favourite) | ✓ | ✓ | yes |
+| DEV.to   | articles    | — | — | — | yes (discover only) |
+| LinkedIn | Kimi WebBridge | ✓ | connect | ✓ | **no — local only** |
+
+LinkedIn has no sanctioned engagement API, so its adapter drives the user's real
+browser session via Kimi WebBridge and must run locally, never in CI. It is a
+documented follow-up, not part of the API-platform MVP.
+
+## Run
+
+```bash
+# safe: discover + draft, never acts
+OUTREACH_MODE=dry_run python -m content_engine.outreach
+
+# live on API platforms (respects caps, dedupe, quality gate)
+OUTREACH_MODE=live OUTREACH_PLATFORMS=bluesky,mastodon python -m content_engine.outreach
+```
+
+Scheduled via `.github/workflows/outreach.yml` (dry-run on schedule until creds +
+caps are dialed in; flip to live via workflow_dispatch).
