@@ -48,7 +48,8 @@ _DEFAULT_CAPS: dict[str, dict[str, int]] = {
     # DEV.to engagement runs through the browser (devto_kimi), not the API; the
     # API adapter stays discover-only. Comments are effortful, so keep it modest.
     "devto": {"like": 15, "follow": 6, "reply": 6},
-    "linkedin": {"like": 8, "follow": 4, "reply": 3},
+    # No follows on LinkedIn (per Yan): like + comment only on his career account.
+    "linkedin": {"like": 8, "follow": 0, "reply": 3},
 }
 
 _DEFAULT_QUERIES = [
