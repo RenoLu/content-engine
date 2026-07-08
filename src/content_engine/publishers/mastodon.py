@@ -43,15 +43,38 @@ class MastodonPublisher(BasePublisher):
         seed = f"{post.repo_url}|{post.title}".encode()
         return hashlib.sha256(seed).hexdigest()
 
+    def _auth(self) -> dict:
+        return {"Authorization": f"Bearer {self.settings.get_env('MASTODON_ACCESS_TOKEN')}"}
+
+    def _upload_media(self, post: Post) -> str | None:
+        """Upload the post image and return its media id, or None. Needs the
+        token's write:media scope; any failure returns None (post ships text-only)."""
+        if not post.image:
+            return None
+        data = post.image.ensure_data(self.client())
+        if not data:
+            return None
+        files = {"file": ("image.jpg", data, post.image.mime or "image/jpeg")}
+        r = self.client().post(f"{self._base()}/api/v2/media", headers=self._auth(),
+                               files=files, data={"description": post.image.alt or ""})
+        r.raise_for_status()
+        mid = r.json().get("id")
+        # media may still be processing (202); the status post tolerates that.
+        return str(mid) if mid else None
+
     def _publish_live(self, post: Post) -> PublishResult:
+        body = self.render_payload(post)
+        media_id = self._upload_media(post)
+        if media_id:
+            body["media_ids"] = [media_id]
         resp = self.client().post(
             f"{self._base()}/api/v1/statuses",
             headers={
-                "Authorization": f"Bearer {self.settings.get_env('MASTODON_ACCESS_TOKEN')}",
+                **self._auth(),
                 "Idempotency-Key": self._idempotency_key(post),
                 "Content-Type": "application/json",
             },
-            json=self.render_payload(post),
+            json=body,
         )
         resp.raise_for_status()
         data = resp.json()

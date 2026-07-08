@@ -99,6 +99,29 @@ class BlueskyPublisher(BasePublisher):
         data = resp.json()
         return data["accessJwt"], data["did"]
 
+    def _upload_image(self, post: Post, access_jwt: str) -> dict | None:
+        """Upload the post image as a blob and return an images embed, or None.
+
+        Bluesky caps a blob at ~1MB; Pollinations JPEGs are well under that. Any
+        failure (fetch/upload) returns None so the post still ships text-only."""
+        if not post.image:
+            return None
+        data = post.image.ensure_data(self.client())
+        if not data:
+            return None
+        resp = self.client().post(
+            f"{self._pds()}/xrpc/com.atproto.repo.uploadBlob",
+            headers={"Authorization": f"Bearer {access_jwt}",
+                     "Content-Type": post.image.mime or "image/jpeg"},
+            content=data,
+        )
+        resp.raise_for_status()
+        blob = resp.json()["blob"]
+        return {
+            "$type": "app.bsky.embed.images",
+            "images": [{"alt": post.image.alt or "", "image": blob}],
+        }
+
     def _publish_live(self, post: Post) -> PublishResult:
         access_jwt, did = self._create_session()
         text = self._text(post)
@@ -110,6 +133,9 @@ class BlueskyPublisher(BasePublisher):
             "langs": ["en"],
             "facets": _link_facets(text, url),
         }
+        embed = self._upload_image(post, access_jwt)
+        if embed:
+            record["embed"] = embed
         resp = self.client().post(
             f"{self._pds()}/xrpc/com.atproto.repo.createRecord",
             headers={"Authorization": f"Bearer {access_jwt}"},

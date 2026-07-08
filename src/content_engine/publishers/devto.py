@@ -52,6 +52,9 @@ class DevToPublisher(BasePublisher):
             article["canonical_url"] = post.canonical_url
         if post.summary:
             article["description"] = post.summary[:140]
+        if post.image and post.image.url:
+            # DEV.to fetches main_image server-side and re-hosts it on its CDN
+            article["main_image"] = post.image.url
         return {"article": article}
 
     @staticmethod

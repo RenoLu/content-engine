@@ -197,6 +197,7 @@ class Pipeline:
 
         # 7. publish (or simulate)
         post = Post.from_draft(draft, repo=selected)
+        post.image = self._build_image(draft, selected)
         results, final_status = self._publish(run_date, post, mode, approved)
 
         # 8. persist terminal status + dedup history.
@@ -304,6 +305,28 @@ class Pipeline:
                 for i in eng.issues
             ]
         return issues
+
+    def _build_image(self, draft, repo) -> "object | None":
+        """Article-specific post image (Pollinations, free). Uses the authored
+        image_prompt when present, else derives a prompt from the piece's own
+        title/angle so the image illustrates THIS article, not a generic visual.
+        Disabled with POST_IMAGE=false. No network here — bytes fetch lazily."""
+        if self.settings.get_env("POST_IMAGE", "true").lower() != "true":
+            return None
+        from . import imagegen
+        prompt = (draft.image_prompt or "").strip()
+        if not prompt:
+            angle = (getattr(draft, "angle", "") or "").strip()
+            topics = ", ".join((repo.topics or [])[:5]) if repo else ""
+            prompt = (f"An illustration for an article titled \"{draft.title}\". "
+                      f"{angle + '. ' if angle else ''}{draft.summary} "
+                      f"Visual concepts: {topics}." if topics else
+                      f"An illustration for an article titled \"{draft.title}\". "
+                      f"{angle + '. ' if angle else ''}{draft.summary}")
+        w = int(self.settings.get_env("POST_IMAGE_WIDTH", "1280") or 1280)
+        h = int(self.settings.get_env("POST_IMAGE_HEIGHT", "720") or 720)
+        alt = f"Illustration for: {draft.title}"
+        return imagegen.generate(prompt, alt=alt, width=w, height=h)
 
     def _publish(self, run_date: str, post: Post, mode: str,
                  approved: bool) -> tuple[list[PublishResult], RunStatus]:

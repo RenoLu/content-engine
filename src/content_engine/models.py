@@ -102,6 +102,7 @@ class Draft:
     summary: str                      # short version for microblog platforms
     tags: list[str] = field(default_factory=list)
     angle: str = ""
+    image_prompt: str = ""            # article-specific subject for the post image
     model: str = ""
     raw: str | None = None            # raw model output for debugging
 
@@ -193,6 +194,44 @@ class EngagementReview:
 
 
 @dataclass
+class ImageAsset:
+    """A generated post image. ``url`` is a stable public image (used directly as
+    a DEV.to cover); ``ensure_data`` lazily downloads the bytes for platforms that
+    upload the image (Bluesky blob, Mastodon media). Kept out of the hot path in
+    dry-run — no network happens until a live publisher asks for the bytes."""
+
+    url: str
+    alt: str = ""
+    mime: str = "image/jpeg"
+    _data: bytes | None = field(default=None, repr=False, compare=False)
+
+    def ensure_data(self, client=None, attempts: int = 3) -> bytes | None:
+        if self._data is not None:
+            return self._data or None
+        import httpx
+        own = client is None
+        c = client or httpx.Client(timeout=120.0, follow_redirects=True)
+        try:
+            for _ in range(attempts):
+                try:
+                    r = c.get(self.url, follow_redirects=True)
+                    if (r.status_code == 200 and r.content and len(r.content) > 2000
+                            and r.headers.get("content-type", "").startswith("image")):
+                        self._data = r.content
+                        return self._data
+                except Exception:  # noqa: BLE001 - retry, then give up gracefully
+                    pass
+            self._data = b""
+            return None
+        finally:
+            if own:
+                c.close()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"url": self.url, "alt": self.alt, "mime": self.mime}
+
+
+@dataclass
 class Post:
     """Platform-neutral content unit handed to publishers."""
 
@@ -202,6 +241,7 @@ class Post:
     tags: list[str] = field(default_factory=list)
     canonical_url: str | None = None  # where the post canonically lives, if anywhere
     repo_url: str | None = None       # the featured repo (for attribution / link)
+    image: "ImageAsset | None" = None  # optional article-specific image
 
     @classmethod
     def from_draft(cls, draft: Draft, repo: Repository | None = None,

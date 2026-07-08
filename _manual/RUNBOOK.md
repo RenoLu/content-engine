@@ -19,6 +19,7 @@ Write `_manual/article.json` — a single JSON object with this shape:
     "summary": "string <= 280 chars, ends with the repo URL",
     "tags": ["lowercase", "max 4"],
     "angle": "short phrase",
+    "image_prompt": "a concrete visual scene that illustrates THIS article's specific thesis (see rules)",
     "body_markdown": "the article (see rules)"
   },
   "review": {
@@ -59,6 +60,20 @@ Write `_manual/article.json` — a single JSON object with this shape:
   "in summary,", "as an ai", "elevate your", "seamlessly integrate",
   "it's worth noting", "it's important to note", "a testament to", "ever-evolving",
   "in the realm of", "needless to say", "at the end of the day".
+
+# image_prompt rules (drives the post's auto-generated image)
+
+- Describe a CONCRETE visual scene that illustrates THIS article's specific point,
+  not a generic "glowing network / abstract tech" stock image. Derive it from the
+  thesis: what is the piece actually arguing? (e.g. for a "prototype to production"
+  piece: a rough sketch/prototype on the left hardening into a solid, running
+  production system on the right, with a small human-approval checkpoint.)
+- One or two sentences, subject + key visual elements only. Do NOT specify style,
+  palette, or "no text" — a shared style suffix is appended automatically.
+- Name real, depictable objects/relationships from the article. Avoid on-image
+  text, logos, brand names, or specific product UIs (diffusion models garble them).
+- If you truly can't picture the article, leave it "" and a prompt is derived from
+  the title/angle automatically.
 
 # Honesty on the scores (you are also the reviewer)
 - `review`: fact-check yourself against the README. Set `approved` true and
