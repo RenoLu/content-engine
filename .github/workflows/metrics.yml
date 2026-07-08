@@ -1,0 +1,51 @@
+name: Metrics snapshot
+
+# Weekly brand-presence snapshot (GitHub / Bluesky / Mastodon followers + stars +
+# outreach actions) appended to data/metrics.sqlite3. Read-only; no posting, no
+# model. See src/content_engine/metrics.py.
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"     # Mondays 08:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: metrics
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    env:
+      METRICS_GITHUB_USER: "RenoLu"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+      MASTODON_BASE_URL: ${{ secrets.MASTODON_BASE_URL }}
+      MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e .
+      - name: Snapshot metrics
+        run: python -m content_engine.metrics
+      - name: Persist metrics db
+        if: always()
+        run: |
+          git config user.name "content-engine[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/metrics.sqlite3 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "no metrics changes"
+          else
+            git commit -m "chore: metrics snapshot $(date -u +%F) [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin main && git push && break
+              echo "push retry $i"; sleep 3
+            done
+          fi
