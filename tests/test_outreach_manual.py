@@ -143,3 +143,18 @@ def test_replay_skips_targets_without_authored_reply(settings):
     assert "reply" not in kinds
     reply_res = [r for r in results if r.action_type == ActionType.REPLY]
     assert reply_res and reply_res[0].status == "skipped"
+
+
+def test_looks_like_bot_filters_automation():
+    from content_engine.outreach.quality import looks_like_bot
+    # bots / feeds by handle
+    assert looks_like_bot("arxiv-daily-bot.bsky.social", "a paper")
+    assert looks_like_bot("some-rss-feeds.bsky.social", "new post")
+    assert looks_like_bot("hn-frontpage-bot.bsky.social", "launched")
+    # promo / job blasts by text
+    assert looks_like_bot("educativ.bsky.social", "DCEO Engineer Job educativ.net/jobs/job/1")
+    assert looks_like_bot("techinsightsinc.bsky.social", "Register 🔗 bit.ly/xyz")
+    # genuine humans survive
+    assert not looks_like_bot("themysteryinc.bsky.social",
+                              "I build real time optimization and usage tracking")
+    assert not looks_like_bot("jane.dev", "we moved ingestion to Bytewax and cut latency")

@@ -22,6 +22,7 @@ from ..logging_setup import get_logger
 from .commenter import Commenter, ReplyRejected
 from .config import OutreachConfig
 from .models import Action, ActionResult, ActionType, Target
+from .quality import looks_like_bot
 from .registry import build_adapter
 from .store import OutreachStore
 
@@ -142,6 +143,9 @@ class OutreachEngine:
             targets: list[Target] = []
             try:
                 targets = adapter.discover(self.config.queries, self.config.per_query_limit)
+                # drop bot/feed/promo accounts before they enter the funnel
+                targets = [t for t in targets
+                           if not looks_like_bot(t.author_handle, t.text)]
                 # deterministic order so a run is reproducible
                 self._rng.shuffle(targets)
                 for target in targets:

@@ -21,6 +21,7 @@ from pathlib import Path
 
 from content_engine.config import load_settings
 from content_engine.outreach.config import load_outreach_config
+from content_engine.outreach.quality import looks_like_bot
 from content_engine.outreach.registry import build_adapter
 from content_engine.outreach.store import OutreachStore
 
@@ -56,6 +57,8 @@ def main() -> int:
                 break
             if not t.text.strip():
                 continue
+            if looks_like_bot(t.author_handle, t.text):
+                continue
             if store.already_done(platform, t.key, "reply"):
                 continue
             dumped.append(dataclasses.asdict(t))
@@ -70,8 +73,10 @@ def main() -> int:
     print(f"\nwrote {out} ({len(dumped)} targets)")
     print("\n=== POSTS TO REPLY TO (author _manual/outreach_replies.json) ===")
     for t in dumped:
-        print(f"\n[{t['platform']}] key={t['key']}  author={t['author_handle']}")
-        print(f"  {t['text'][:400]}")
+        line = f"\n[{t['platform']}] key={t['key']}  author={t['author_handle']}\n  {t['text'][:400]}"
+        # console may be cp1252; never let an emoji in a post crash the dump echo
+        sys.stdout.buffer.write(line.encode("utf-8", "replace"))
+        sys.stdout.buffer.write(b"\n")
     return 0
 
 
