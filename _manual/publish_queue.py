@@ -16,8 +16,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from content_engine import imagegen
 from content_engine.config import load_settings
-from content_engine.models import Post
+from content_engine.models import ImageAsset, Post
 from content_engine.publishers import build_publishers
 
 HERE = Path(__file__).parent
@@ -27,6 +28,28 @@ PUBLISHED = HERE / "published"
 
 def _queue_files() -> list[Path]:
     return sorted(QUEUE.glob("*.json")) if QUEUE.exists() else []
+
+
+def _build_image(data: dict, s) -> "ImageAsset | None":
+    """Article image for a queued item, attached at publish time so the GitHub
+    Action's posts carry a cover/embed. Prefers a committed ``image_url`` (a
+    pre-generated asset hosted in-repo, most reliable in CI); otherwise builds a
+    Pollinations image from the item's ``image_prompt`` (or one derived from the
+    title/summary). Disabled with POST_IMAGE=false. No network here — publishers
+    fetch the bytes lazily only when they need them (Bluesky blob, Mastodon media)."""
+    if s.get_env("POST_IMAGE", "true").lower() != "true":
+        return None
+    title = data.get("title", "")
+    url = (data.get("image_url") or "").strip()
+    if url:
+        return ImageAsset(url=url, alt=f"Illustration for: {title}")
+    prompt = (data.get("image_prompt") or "").strip()
+    if not prompt:
+        prompt = (f"An illustration for an article titled \"{title}\". "
+                  f"{data.get('summary', '')}").strip()
+    w = int(s.get_env("POST_IMAGE_WIDTH", "1280") or 1280)
+    h = int(s.get_env("POST_IMAGE_HEIGHT", "720") or 720)
+    return imagegen.generate(prompt, alt=f"Illustration for: {title}", width=w, height=h)
 
 
 def main() -> int:
@@ -49,6 +72,7 @@ def main() -> int:
         canonical_url=data.get("canonical_url"),
         repo_url=data.get("repo_url"),
     )
+    post.image = _build_image(data, s)
     repo = data.get("repo", item.stem)
 
     results = []
