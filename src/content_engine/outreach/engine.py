@@ -111,7 +111,7 @@ class OutreachEngine:
         # 3) FOLLOW — only authors we actually engaged with, and sparingly.
         if did_something and target.author_id and \
                 self._eligible(platform, target, ActionType.FOLLOW) and \
-                self._rng.random() < 0.5:
+                self._rng.random() < self.config.follow_ratio:
             self._run_counts[(platform, "follow")] += 1
             res = adapter.act(Action(platform, ActionType.FOLLOW, target))
             self.store.record(res, author=target.author_handle)

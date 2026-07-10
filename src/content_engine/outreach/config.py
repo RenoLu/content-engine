@@ -70,6 +70,7 @@ class OutreachConfig:
     like_ratio: float             # fraction of eligible targets to like
     reply_ratio: float            # fraction of eligible targets to reply to
     seed: int                     # deterministic RNG seed for pacing/sampling
+    follow_ratio: float = 0.5     # fraction of engaged authors to follow
     settings: Settings = field(repr=False, default=None)  # for model client + env
 
     @property
@@ -130,5 +131,6 @@ def load_outreach_config(settings: Settings) -> OutreachConfig:
         like_ratio=float(envv("OUTREACH_LIKE_RATIO", str(toml.get("like_ratio", 0.8))) or 0.8),
         reply_ratio=float(envv("OUTREACH_REPLY_RATIO", str(toml.get("reply_ratio", 0.35))) or 0.35),
         seed=_as_int(envv("OUTREACH_SEED", str(toml.get("seed", 1337))), 1337),
+        follow_ratio=float(envv("OUTREACH_FOLLOW_RATIO", str(toml.get("follow_ratio", 0.5))) or 0.5),
         settings=settings,
     )
