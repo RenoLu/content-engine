@@ -25,46 +25,57 @@ from content_engine.outreach.store import OutreachStore
 
 # on-brand articles, keyed by DEV.to author handle
 WANTED_HANDLES = [
-    "alexmercedcoder",
-    "hexisteme",
-    "vbc_risk_analytics",
-    "wondadav",
-    "george_k_09db0948571db2c",
+    "matt_frank_usa",
+    "reza_brianca",
+    "roni_das_b1b76c5ee6583027",
+    "datadriven",
+    "ragekill3377",
 ]
 
 # agent-authored comments keyed by the EXACT article title (== Target.text that
 # discovery returns). A title with no entry gets liked/followed but not commented.
 REPLIES_BY_TITLE = {
-    "Apache Data Lakehouse Weekly: July 1 to July 8, 2026":
-        "The table-statistics fight is the interesting one. Once two engines "
-        "write stats against the same snapshot, last-writer-wins quietly wrecks "
-        "join plans and compute cost. Curious whether Iceberg scopes stats per "
-        "engine or just settles on a convention.",
+    "Feature Stores: Managing ML Features at Scale":
+        "The part that earns a feature store is online/offline consistency. "
+        "Without one transformation path you train on features you never serve, "
+        "and the skew shows up as accuracy loss. Point-in-time correctness on "
+        "the offline join is the piece most teams underestimate until a "
+        "backfill lies to them.",
 
-    "\"A Fair Coin Isn't Enough: When a Perfectly Randomized Experiment Is "
-    "Impossible to Analyze\"":
-        "The missing join is the one that bites in practice. If you don't "
-        "persist the assignment id with the unit and its outcome at flip time, "
-        "you can prove the coin fair and still have nothing to analyze. The "
-        "re-draw guard is the part most A/B setups quietly skip too.",
+    "Feature Stores: The Secret Sauce for Real-Time ML (and Sanity) in Production":
+        "The real-time angle is where cost sneaks in. Streaming features feel "
+        "free until you price the always-on materialization and the state you "
+        "keep warm for low-latency reads. Deciding which features truly need "
+        "sub-second freshness versus a few minutes old is the call that keeps "
+        "the bill sane.",
 
-    "Designing an API-First Value-Based Care Analytics Stack for MA Payers":
-        "Pinning the model version on the scoring call is the detail that saves "
-        "you at audit time, since a V28 vs V24 swap silently reprices everyone. "
-        "How do you handle retro dx deletes, where a dropped diagnosis should "
-        "lower a RAF you already reported?",
+    "How Delta Lake Brings ACID to a Data Lake":
+        "Worth stressing the guarantee lives in the transaction log, not the "
+        "parquet. The files are just data, the ordered log is the source of "
+        "truth, so a half-written file never corrupts a read. Concurrent "
+        "writers still hit optimistic-concurrency conflicts though, ACID here "
+        "is not serializable for free.",
 
-    "How do I answer \"what did my data look like last month\" in Postgres?":
-        "SCD Type 4 with a trigger-fed history table is a solid default, but the "
-        "trigger becomes the single point of failure: a bulk update that "
-        "bypasses it or a schema change on the main table leaves gaps you only "
-        "notice at query time. Do you reconcile history against main on a cadence?",
+    "Why Snowflake Separates Storage From Compute":
+        "Separating them lets read concurrency scale without touching storage, "
+        "and you stop paying for idle compute. The catch is cold local cache "
+        "after a warehouse resumes, and a cost model that rewards short bursty "
+        "queries over long full scans. Sizing per workload matters more than "
+        "expected.",
 
-    "You Don't Need to Scrape BORME: Spain's Company Registry Has an Open-Data API":
-        "The consumed-chars over total-chars metric is a smart coverage check; "
-        "most parsers never know what they silently dropped. The "
-        "200-with-error-body case is the nastiest, since status-only caching "
-        "poisons your store. Deterministic parse over a closed vocab is the right call.",
+    "3 Staff Engineers Couldn't Pass This Single DE Job Posting":
+        "Usually this is a team's full skill set crammed into one req: batch, "
+        "streaming, modeling, orchestration, and cloud at senior depth. Nobody "
+        "does all of them daily, so even strong engineers miss on breadth, not "
+        "ability. Postings that filter well test depth in one area and "
+        "reasoning in the rest.",
+
+    "Really fast columnar analytics engine":
+        "The wins in columnar come from vectorized execution and late "
+        "materialization, plus encodings the CPU can scan without fully "
+        "decoding. Curious where this sits, a from-scratch engine or a layer "
+        "over a kernel like Arrow or DuckDB. What matters is selective scans, "
+        "not full aggregates.",
 }
 
 
@@ -103,6 +114,11 @@ def main() -> int:
         matched = t.text in REPLIES_BY_TITLE
         line = f"  - [{t.author_handle}] comment={'yes' if matched else 'NO'} :: {t.text}\n"
         sys.stdout.buffer.write(line.encode("utf-8", "replace"))
+
+    # Warm the Kimi session so a tab is bound before run() calls healthy();
+    # healthy() 502s when the session has no bound tab yet (known quirk).
+    if config.is_live:
+        runner.kimi.navigate("https://dev.to", new_tab=False)
 
     summary = runner.run()
     store.close()

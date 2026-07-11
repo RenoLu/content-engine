@@ -1,0 +1,5 @@
+{
+  "at://did:plc:wkxyggadrxmnj3xc6ejyl5po/app.bsky.feed.post/3mq5cp53vvy2a": "Traces are gold, but the bottleneck I keep hitting is labeling them. Raw traces are cheap; deciding which ones are actual failures worth learning from is the expensive part. How are you scoring them?",
+  "116885406400017200": "The TEVV gap tends to be widest after deployment, where drift and the weird edge cases actually show up, and that is exactly where no one owns the eval. Did your talk get into continuous post-release testing, or mostly the pre-launch side?",
+  "116885754877889432": "The orthophoto spot-check is a nice touch. Change detection between two LiDAR epochs usually lives or dies on registration error versus real change. Did the 2019 and 2025 sets need much alignment work before you differenced them?"
+}

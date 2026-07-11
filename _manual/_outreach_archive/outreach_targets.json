@@ -1,0 +1,46 @@
+[
+  {
+    "platform": "bluesky",
+    "key": "at://did:plc:fm54caydpechtm3aatlkm6jr/app.bsky.feed.post/3mq5is5h6k22b",
+    "text": "For all the crazy engineering blogs and content Netflix has out there, it’s baffling how little of their data analysis actually makes an impact, they end up making the most confident wrong decisions at every turn.",
+    "url": "https://bsky.app/profile/sushrit.bsky.social/post/3mq5is5h6k22b",
+    "author_id": "did:plc:fm54caydpechtm3aatlkm6jr",
+    "author_handle": "sushrit.bsky.social",
+    "uri": "at://did:plc:fm54caydpechtm3aatlkm6jr/app.bsky.feed.post/3mq5is5h6k22b",
+    "cid": "bafyreidhqollgxrtok4ave5nsvw7q4kmwe2senrv27cu2u3lh6ywuflvfa",
+    "extra": {}
+  },
+  {
+    "platform": "bluesky",
+    "key": "at://did:plc:wkxyggadrxmnj3xc6ejyl5po/app.bsky.feed.post/3mq5cp53vvy2a",
+    "text": "Improving agents is not prompt engineering. It is data mining. Every trace your agent produces is UX data waiting to be used.\n\nwww.langchain.com/blog/improvi...",
+    "url": "https://bsky.app/profile/inmotudigital.bsky.social/post/3mq5cp53vvy2a",
+    "author_id": "did:plc:wkxyggadrxmnj3xc6ejyl5po",
+    "author_handle": "inmotudigital.bsky.social",
+    "uri": "at://did:plc:wkxyggadrxmnj3xc6ejyl5po/app.bsky.feed.post/3mq5cp53vvy2a",
+    "cid": "bafyreibqgleng27k5newwvz2rfnuw44t7jslexhznpvp6vpbcclzvg4dsm",
+    "extra": {}
+  },
+  {
+    "platform": "mastodon",
+    "key": "116885754877889432",
+    "text": "Tree canopy change detection in Vaud: Engineering firm n+p used  # swisstopo  ’s  # LiDAR   data from 2019 and 2025 to detect  # TreeCanopy   change across the canton of Vaud, with results explorable in a web app that includes orthophoto comparison for spot-checking. Despite methodological...               https://  spatialists.ch/posts/2026/07/0  8-tree-canopy-change-detection-in-vaud/    # GIS    # GISchat    # geospatial    # SwissGIS",
+    "url": "https://mapstodon.space/@spatialists/116885754584822976",
+    "author_id": "114066748260856151",
+    "author_handle": "spatialists@mapstodon.space",
+    "uri": "",
+    "cid": "",
+    "extra": {}
+  },
+  {
+    "platform": "mastodon",
+    "key": "116885406400017200",
+    "text": "Ok, I did my talk.   Beyond responsible AI.   Key highlights:  - if someone says they’re doing responsible AI but has no TEVV (test, evaluate, verify, validate) plan or team, they are not responsible at all  - Who is testing AI now? Only research scientists, engineers, mostly in China and San Francisco Bay Area, and a few select testing labs (mostly in the global north)   - Who is not involved? Blue collar workers, people who don’t do ‘knowledge work’, people who speak other languages, young people, people who AI can impact significantly   - Why don’t people do more tests? Expensive, hard to run, long, static. By the time you’re done, you’ve got to do it again. No guarantee anyone’s incorporating your work or data to fix anything. No feedback loop back into frontier labs (anywhere)  - How to include more people? Use plain English. Be inclusive. Make space for others. Clearly explain this is not only for science or computer people. Be explicit, say this over and over again.   - Teach people to read model cards like nutritional labels. What are the components? What does it all mean?   - Require multilingual benchmarks repeatedly in all model releases. Now they test math, bio risks, but only very few model developers do any multilingual testing at all. Unacceptable as we already know that’s not a future existential risk; that’s a today risk   - Everyone can do testing. There are participatory evals emerging. They should get out of academic / civil society spaces.   - At the same time, be aware of asking those most harmed by AI to bear the costs of AI testing. If you’re building multilingual mental health benchmarks you need psychologists. Just like any scientific study with burden of care.   - Pay people. And not always the same people. If you’re a N American or European lab asking people in the global south, but really anywhere, to work for free, shame on you.   - We don’t have good tools and processes for agentic AI testing and evaluation yet.    GOODBYE Geneva, it’s been real. I’ll probably be back next year.    # Geneva    # AI",
+    "url": "https://hachyderm.io/@skinnylatte/116885406258597455",
+    "author_id": "109355190751690360",
+    "author_handle": "skinnylatte@hachyderm.io",
+    "uri": "",
+    "cid": "",
+    "extra": {}
+  }
+]

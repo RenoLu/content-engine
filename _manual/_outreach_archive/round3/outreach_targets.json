@@ -1,0 +1,57 @@
+[
+  {
+    "platform": "bluesky",
+    "key": "at://did:plc:zcumilxztfgl3var46mgznnt/app.bsky.feed.post/3mqcr3grrkf2n",
+    "text": "Follow along Kezhan Shi's latest RAG-focused guide to learn why adding a bounded loop to your retrieval step can save tokens and lift precision.",
+    "url": "https://bsky.app/profile/towardsdatascience.com/post/3mqcr3grrkf2n",
+    "author_id": "did:plc:zcumilxztfgl3var46mgznnt",
+    "author_handle": "towardsdatascience.com",
+    "uri": "at://did:plc:zcumilxztfgl3var46mgznnt/app.bsky.feed.post/3mqcr3grrkf2n",
+    "cid": "bafyreih2ngpbyeoa4ntdwuqlzwqkbkmklhhgr7g4xpal3cjogo265s5pje",
+    "extra": {}
+  },
+  {
+    "platform": "bluesky",
+    "key": "at://did:plc:o5k2xowkuhwmyvji7zb64hi6/app.bsky.feed.post/3mqcue4okrc2k",
+    "text": "it will be a useful tool, particularly in medicine and accounting/auditing and engineering, reading data and spotting anomalies, but the way it's being presented, it's not right. Who would be market for AI novels? or AI readers?  Readers like to read authors they like.\nMight be wrong.  Often am.",
+    "url": "https://bsky.app/profile/susande.bsky.social/post/3mqcue4okrc2k",
+    "author_id": "did:plc:o5k2xowkuhwmyvji7zb64hi6",
+    "author_handle": "susande.bsky.social",
+    "uri": "at://did:plc:o5k2xowkuhwmyvji7zb64hi6/app.bsky.feed.post/3mqcue4okrc2k",
+    "cid": "bafyreiegcfjjqndkxim65nb22ruiidssvzdz5qjv2p763tn6tehpzto2wm",
+    "extra": {}
+  },
+  {
+    "platform": "mastodon",
+    "key": "116897312018156531",
+    "text": "Q: so, how do you achieve the necessary security guarantees without turning your blazing-fast real-time engine into a absolute turtle?  A: no idea.  Edit: Okay, so I doubt you would believe me when I say that, but I genuinely do not know. Like, that question was really hard to answer so I figured that maybe the problem is not the system itself but the data going into it",
+    "url": "https://mastodon.social/@drmorrisj/116897312018156531",
+    "author_id": "111178909938075953",
+    "author_handle": "drmorrisj",
+    "uri": "",
+    "cid": "",
+    "extra": {}
+  },
+  {
+    "platform": "mastodon",
+    "key": "116897310966548691",
+    "text": "Reading List 8  \n\n This week’s reading list explores the shifting paradigms of personal software development, the evolving dynamics of managing AI agents, and the frontier of ambient hardware. From the realization that managing agents is deeply adjacent to engineering management, to building custom tools without writing a line of code, these articles highlight how rapidly our relationship with computers is changing.",
+    "url": "https://allen.hutchison.org/2026/07/10/reading-list-8/",
+    "author_id": "115249131414115182",
+    "author_handle": "allenhutchison@allen.hutchison.org",
+    "uri": "",
+    "cid": "",
+    "extra": {}
+  },
+  {
+    "platform": "mastodon",
+    "key": "116896237055775194",
+    "text": "@ screwlisp     Screwy, you are welcome to cite me anytime, as you see fit.  By the way, Ramin and I share more than similar sounding names; we share the “AI enthusiast to skeptic” trajectory, too.  In the early 1980s, I was enthralled with LISPy rule-based AI, along with LISP machines. Then, Rumelhart’s 1986 BP paper captured me, and I became an adherent of connectionism. But within 10 years, the field withered, commercially. It was not until the 2010s that AI returned to the industry, with CNNs leading the way. Small, quantised CNNs were used in real-time DSP and DIP. Imagine my delight.  But as soon as LLM took centre stage, post 2017, AI escaped from its academic bottle and began wreaking havoc in industry and society: social, financial, economic, political, and even educational. In just five years, by around 2022, blind, uncontrolled, unethical use of AI became the norm, exacerbated by the abundance of Big Data.  I still admire and adore the mathematics and the technology; this development is one of humanity’s great achievements. But I detest the current unethical, unregulated use of this technology.",
+    "url": "https://mathstodon.xyz/@AmenZwa/116896236909854119",
+    "author_id": "109309580189053357",
+    "author_handle": "AmenZwa@mathstodon.xyz",
+    "uri": "",
+    "cid": "",
+    "extra": {}
+  }
+]
