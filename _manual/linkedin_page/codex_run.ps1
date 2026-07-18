@@ -8,50 +8,78 @@
 #>
 $ErrorActionPreference = "Continue"
 $Dir  = Split-Path -Parent $MyInvocation.MyCommand.Path
-$Log  = Join-Path $Dir "codex_run_log.txt"
+$Log  = Join-Path $Dir "codex_run_log.txt"     # our own markers, never shared
+$Out  = Join-Path $Dir "codex_stdout.txt"      # codex transcript
+$Err  = Join-Path $Dir "codex_stderr.txt"      # codex chatter + warnings
 $Last = Join-Path $Dir "codex_last_message.txt"
 
 $prompt = "Publish the next queued LinkedIn article to the Agent Palisade company page. Follow AGENTS.md in this directory exactly."
 
-Add-Content -Path $Log -Value ("`n==== {0} : codex exec start ====" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss")) -Encoding utf8
+# codex's `notify` hook (see ~/.codex/config.toml) outlives the run and inherits
+# the redirected handles, so a file cmd wrote to can still be locked afterwards.
+# Our log is a separate file for that reason; retry anyway so a stray lock can
+# never take down the run itself.
+function Write-Log($msg) {
+  foreach ($i in 1..5) {
+    try { Add-Content -Path $Log -Value $msg -Encoding utf8 -ErrorAction Stop; return }
+    catch { Start-Sleep -Milliseconds 200 }
+  }
+  Write-Host $msg
+}
+
+Write-Log ("`n==== {0} : codex exec start ====" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"))
 
 # -m gpt-5.5           : gpt-5.6-sol (CLI default) errors on 0.133.0
-# -c mcp_servers={}    : skip MCP servers (Robinhood OAuth noise / slowness)
 # --dangerously-bypass : unattended; no approval prompts (externally trusted machine)
 # -C $Dir              : working root so AGENTS.md + the scripts resolve
-# piping $null closes stdin so codex never blocks waiting on a tty
-$codexArgs = @(
-  'exec', $prompt,
-  '-m', 'gpt-5.5',
-  '-c', 'mcp_servers={}',
-  '--dangerously-bypass-approvals-and-sandbox',
-  '--skip-git-repo-check',
-  '-C', $Dir,
-  '-o', $Last
-)
+#
+# There used to be a `-c mcp_servers={}` here claiming to skip MCP servers. It
+# does not: config tables merge rather than replace, so [mcp_servers.robinhood]
+# in ~/.codex/config.toml still loads and still logs its OAuth failure. Dropped
+# rather than left in place pretending to work. To actually silence it, remove
+# that server from config.toml or re-authenticate it.
 
 # Count what is actually posted before and after. Codex exits 0 whenever it
 # successfully REPORTS an outcome, including "skipped: bridge down", so its exit
 # code says nothing about whether an article went out. On 07-16 and 07-17 the
 # bridge was down and the task still recorded a clean success. Check the state
 # file instead of trusting the agent's self-report.
+# Both counters wrap the parenthesised result, NOT the raw pipeline. PowerShell
+# 5.1's ConvertFrom-Json emits a JSON array as ONE object, so
+# `@(Get-Content x | ConvertFrom-Json).Count` is 1 no matter how long the array
+# is. That made the queue look empty and turned the no-op guard below into the
+# success report it was written to prevent.
 function Get-PostedCount {
   try { @((Get-Content (Join-Path $Dir "posted.json") -Raw | ConvertFrom-Json).posted).Count }
   catch { -1 }
 }
+function Get-QueuedCount {
+  try { @((Get-Content (Join-Path $Dir "queue.json") -Raw | ConvertFrom-Json)).Count }
+  catch { 0 }
+}
 $before = Get-PostedCount
 
-$null | & codex @codexArgs *>&1 | Tee-Object -FilePath $Log -Append
+# Run through cmd so PowerShell never touches the child's streams.
+#
+# npm's codex.ps1 shim does `$input | & node ...`, so node's stderr comes back as
+# a PowerShell error record: routine chatter ("Reading additional input from
+# stdin...", the models-cache warning) got rendered as a red NativeCommandError
+# with a stack-looking header, which buried the one line that matters. Letting
+# cmd do the redirection keeps stderr as plain text, and <NUL closes stdin so
+# codex never blocks waiting on a tty. $LASTEXITCODE still comes back intact.
+$cmdLine = 'codex.cmd exec "{0}" -m gpt-5.5 --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -C "{1}" -o "{2}" 1>>"{3}" 2>>"{4}" <NUL' `
+  -f $prompt, $Dir, $Last, $Out, $Err
+& cmd /c $cmdLine
 $code = $LASTEXITCODE
-Add-Content -Path $Log -Value ("==== {0} : codex exec end (exit {1}) ====" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $code) -Encoding utf8
+Write-Log ("==== {0} : codex exec end (exit {1}) ====" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $code)
 
 $after = Get-PostedCount
 if ($code -eq 0 -and $after -le $before) {
-  $queued = try { @(Get-Content (Join-Path $Dir "queue.json") -Raw | ConvertFrom-Json).Count } catch { 0 }
-  if ($after -ge $queued) {
-    Add-Content -Path $Log -Value "queue empty - nothing left to post" -Encoding utf8
+  $queued = Get-QueuedCount
+  if ($queued -gt 0 -and $after -ge $queued) {
+    Write-Log "queue empty - nothing left to post"
   } else {
-    Add-Content -Path $Log -Value "NOTHING POSTED (still $after of $queued) - failing so the run is not recorded as a success" -Encoding utf8
+    Write-Log "NOTHING POSTED (still $after of $queued) - failing so the run is not recorded as a success"
     exit 4
   }
 }

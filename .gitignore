@@ -36,3 +36,7 @@ _manual/logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# codex daily-run transcripts (local noise, not source)
+_manual/linkedin_page/codex_stdout.txt
+_manual/linkedin_page/codex_stderr.txt
