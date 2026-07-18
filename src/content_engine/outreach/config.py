@@ -71,6 +71,14 @@ class OutreachConfig:
     reply_ratio: float            # fraction of eligible targets to reply to
     seed: int                     # deterministic RNG seed for pacing/sampling
     follow_ratio: float = 0.5     # fraction of engaged authors to follow
+    # Reach band for discovery. Replying to a post nobody saw earns nothing, and
+    # replying under a viral general-audience post reads as spam and does not
+    # convert for a niche account. Engage the middle: real discussion, our field.
+    # Above roughly 800 likes a technical query stops returning technical posts
+    # and starts returning general-audience virality (politics, news), where a
+    # niche reply reads as spam and converts nothing.
+    min_likes: int = 5
+    max_likes: int = 800
     settings: Settings = field(repr=False, default=None)  # for model client + env
 
     @property
@@ -132,5 +140,7 @@ def load_outreach_config(settings: Settings) -> OutreachConfig:
         reply_ratio=float(envv("OUTREACH_REPLY_RATIO", str(toml.get("reply_ratio", 0.35))) or 0.35),
         seed=_as_int(envv("OUTREACH_SEED", str(toml.get("seed", 1337))), 1337),
         follow_ratio=float(envv("OUTREACH_FOLLOW_RATIO", str(toml.get("follow_ratio", 0.5))) or 0.5),
+        min_likes=_as_int(envv("OUTREACH_MIN_LIKES", str(toml.get("min_likes", 5))), 5),
+        max_likes=_as_int(envv("OUTREACH_MAX_LIKES", str(toml.get("max_likes", 800))), 800),
         settings=settings,
     )

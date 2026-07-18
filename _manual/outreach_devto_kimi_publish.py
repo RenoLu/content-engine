@@ -25,33 +25,41 @@ from content_engine.outreach.store import OutreachStore
 
 # on-brand articles, keyed by DEV.to author handle
 WANTED_HANDLES = [
-    "labyrinthanalytics",
-    "truenorthdata",
-    "vaibhav7387",
+    "b0bai",
+    "tmfrisinger",
+    "aijasonz",
 ]
 
 # agent-authored comments keyed by the EXACT article title (== Target.text that
 # discovery returns). A title with no entry gets liked/followed but not commented.
 REPLIES_BY_TITLE = {
-    "LangGraph vs LangChain in 2026: When Each Wins":
-        "The split I keep hitting: LangChain is fine until a step needs to "
-        "retry, branch, or resume after a failure, and then you are hand "
-        "rolling state anyway. LangGraph makes that state explicit, which "
-        "costs more upfront. If the flow is a straight line, the extra "
-        "structure is dead weight.",
+    "Why AI Agent PRs Get Rejected And How Repo Contracts Help":
+        "Repo contracts help because they move the argument left: the agent "
+        "fails against an explicit rule instead of a reviewer's taste. The "
+        "ones that pay off are the boring mechanical rules, layering, "
+        "dependency direction, where tests live. Taste still needs a human, "
+        "just not as the first line of defense.",
 
-    "How I turned Canada's messy open government data into 3 clean data products":
-        "Turning open government data into something usable is mostly a "
-        "maintenance bet. The scrape is a weekend; what kills these projects "
-        "is a province quietly renaming a column two months later. Curious "
-        "whether you added schema checks that fail loudly before the product "
-        "goes stale.",
+    "The Bar for TDD Just Moved":
+        "The bar moved because writing the test stopped being the expensive "
+        "part. Deciding what should be true still is, and an agent will "
+        "happily generate tests that pin down the behavior you already have "
+        "rather than the behavior you wanted. Red-green only means something "
+        "if you chose the red.",
 
-    "Snowflake or Databricks? An Honest Comparison (From 200+ Migrations)":
-        "200 migrations is the useful part here. Most comparisons benchmark on "
-        "clean data nobody actually has. The pattern I see is the decision "
-        "gets made on compute pricing, then the real cost lands in governance "
-        "and how much existing Spark or dbt code has to be rewritten.",
+    "Agents Pattern-Match Your Test Smells":
+        "This matches what I see. An agent reproduces whatever the existing "
+        "suite implies is normal, so point one at a codebase where tests "
+        "assert on mocks and you get more mock assertions. The suite is "
+        "effectively the spec, and its smells now propagate faster than a "
+        "person could spread them.",
+
+    "Crabbox: Cloud Sandboxes for Parallel Coding Agents":
+        "Running agents in parallel makes isolation the bottleneck rather "
+        "than tokens. Once several of them touch one repo you are really "
+        "running concurrent branches with no merge policy, so the sandbox "
+        "ends up having to answer what happens when two agents are both "
+        "right about different things.",
 }
 
 

@@ -67,7 +67,11 @@ class BlueskyAdapter(BaseAdapter):
                 resp = self.client().get(
                     f"{self._pds()}/xrpc/app.bsky.feed.searchPosts",
                     headers=self._headers(),
-                    params={"q": q, "limit": min(limit, 25), "sort": "latest"},
+                    # "latest" returns whatever was posted seconds ago, which in
+                    # practice is near-zero-engagement noise (often one account
+                    # posting on repeat). A reply there is never seen. "top"
+                    # surfaces posts with real discussion.
+                    params={"q": q, "limit": min(limit, 25), "sort": "top"},
                 )
                 resp.raise_for_status()
                 posts = resp.json().get("posts", [])
@@ -79,6 +83,9 @@ class BlueskyAdapter(BaseAdapter):
                 did = author.get("did", "")
                 if not uri or uri in seen or did == my_did:
                     continue
+                likes = int(p.get("likeCount", 0) or 0)
+                if not (self.config.min_likes <= likes <= self.config.max_likes):
+                    continue
                 seen.add(uri)
                 out.append(Target(
                     platform=self.name,
@@ -89,7 +96,12 @@ class BlueskyAdapter(BaseAdapter):
                     author_handle=author.get("handle", ""),
                     uri=uri,
                     cid=p.get("cid", ""),
+                    extra={"likes": likes,
+                           "reposts": int(p.get("repostCount", 0) or 0),
+                           "replies": int(p.get("replyCount", 0) or 0)},
                 ))
+        # most-discussed first, so the reply cap is spent where it is seen
+        out.sort(key=lambda t: t.extra.get("likes", 0), reverse=True)
         return out
 
     @staticmethod

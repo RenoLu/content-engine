@@ -51,6 +51,11 @@ class MastodonAdapter(BaseAdapter):
                 aid = str(acct.get("id", ""))
                 if not sid or sid in seen or (me and aid == me):
                     continue
+                # same reach band as Bluesky: skip posts nobody engaged with,
+                # they cost a reply and are never seen
+                favs = int(s.get("favourites_count", 0) or 0)
+                if not (self.config.min_likes <= favs <= self.config.max_likes):
+                    continue
                 seen.add(sid)
                 out.append(Target(
                     platform=self.name,
@@ -59,7 +64,11 @@ class MastodonAdapter(BaseAdapter):
                     url=s.get("url") or s.get("uri", ""),
                     author_id=aid,
                     author_handle=acct.get("acct", ""),
+                    extra={"likes": favs,
+                           "reposts": int(s.get("reblogs_count", 0) or 0),
+                           "replies": int(s.get("replies_count", 0) or 0)},
                 ))
+        out.sort(key=lambda t: t.extra.get("likes", 0), reverse=True)
         return out
 
     def _verify_id(self) -> str:
