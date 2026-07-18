@@ -36,10 +36,6 @@ class FakeKimi:
         self.typed += text
         return {}
 
-    def mouse_click(self, x, y):
-        self.actions.append(("click", (x, y)))
-        return {}
-
     def evaluate(self, code):
         if "user-profile-dropdown" in code:
             return "yes" if self.logged_in else "no"
@@ -47,8 +43,8 @@ class FakeKimi:
             self.actions.append(("like", None)); return "ok"
         if 'Follow user:' in code:
             self.actions.append(("follow", None)); return "ok"
-        if "scrollIntoView" in code:                      # locate comment box
-            return '{"ok":true,"x":10,"y":20}'
+        if "scrollIntoView" in code:                      # focus comment box
+            self.actions.append(("focus", None)); return '{"ok":true}'
         if "return t?(t.value||'').length:-1" in code:    # typed-length probe
             return len(self.typed)
         if "#new_comment" in code:                        # submit

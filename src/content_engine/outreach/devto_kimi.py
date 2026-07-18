@@ -68,24 +68,27 @@ _FOLLOW_JS = r"""
 # only trustworthy signal is the header profile menu / auth cookie.
 _LOGGED_IN_JS = r"""
 (()=>{
-  const menu=document.querySelector('#user-profile-dropdown, .crayons-header__link--profile, [data-testid="user-profile-dropdown"]');
-  const loginLink=[...document.querySelectorAll('a')].some(a=>/^(log in|sign in)$/i.test((a.innerText||'').trim()));
+  // signed-in-only affordances; the profile menu is #crayons-header__menu
+  const menu=document.querySelector('#crayons-header__menu, #notifications-link, #user-profile-dropdown');
+  const loginLink=[...document.querySelectorAll('a')].some(
+      a=>/^(log in|sign in)$/i.test((a.innerText||'').trim()));
   return (menu && !loginLink) ? "yes" : "no";
 })()
 """
 
 
-# Scroll the comment box into view and hand back its centre, so the caller can
-# focus it with a TRUSTED click. A synthetic value write plus input/change events
-# does not reach the editor's own state, so Submit fires on an empty field and
-# the comment is silently dropped.
+# Focus the comment box so trusted keystrokes land in it. el.focus() is enough to
+# steer real key events; what does NOT work is writing .value synthetically, since
+# that never reaches the editor's own state and Submit then fires on an empty
+# field. A trusted mouse_click is no good here either, because the box sits below
+# the fold and the click misses.
 _FOCUS_COMMENT_JS = r"""
 (()=>{
   const t=document.querySelector('#text-area');
   if(!t) return JSON.stringify({ok:false,why:"no_textarea"});
   t.scrollIntoView({block:'center'});
-  const r=t.getBoundingClientRect();
-  return JSON.stringify({ok:true,x:r.left+r.width/2,y:r.top+r.height/2});
+  t.focus();
+  return JSON.stringify({ok:document.activeElement===t,why:"not_focused"});
 })()
 """
 
@@ -152,15 +155,22 @@ class DevtoKimiRunner:
         """Type the comment with trusted keystrokes, submit, then verify it is
         really on the page. Returns "ok" only when the text is visible after
         submit; every failure mode gets its own string so the log is honest."""
-        spot = json.loads(str(self.kimi.evaluate(_FOCUS_COMMENT_JS)))
+        # the comment form hydrates late and sits below the fold, so poll for it
+        # rather than assuming it is there once the article renders
+        spot = {}
+        for _ in range(8):
+            spot = json.loads(str(self.kimi.evaluate(_FOCUS_COMMENT_JS)))
+            if spot.get("ok"):
+                break
+            self._sleeper(1.5)
         if not spot.get("ok"):
             return str(spot.get("why", "no_textarea"))
-        self.kimi.mouse_click(spot["x"], spot["y"])
         self._sleeper(0.5)
         self.kimi.key_type(comment)
         self._sleeper(0.8)
 
-        typed = int(self.kimi.evaluate(_typed_len_js()) or -1)
+        raw = self.kimi.evaluate(_typed_len_js())
+        typed = -1 if raw is None else int(raw)  # 0 is a real length, not "missing"
         if typed < len(comment) - 2:
             # the keystrokes did not land, so submitting would post nothing
             return f"typed_only_{typed}_of_{len(comment)}"

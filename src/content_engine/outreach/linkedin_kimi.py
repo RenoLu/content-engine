@@ -78,10 +78,10 @@ class KimiBridge:
         reaches the framework's state, so real keystrokes are the only way in."""
         return self._cmd("key_type", {"text": text})
 
-    def mouse_click(self, x: float, y: float) -> dict:
-        """Trusted click at viewport coords, for focusing an editor that ignores
-        el.focus()."""
-        return self._cmd("mouse_click", {"x": x, "y": y})
+    def mouse_click(self, selector: str) -> dict:
+        """Trusted click, for focusing an editor that ignores el.focus(). The
+        daemon takes a CSS selector or @e ref, not coordinates."""
+        return self._cmd("mouse_click", {"selector": selector})
 
     def close_session(self) -> None:
         try:
