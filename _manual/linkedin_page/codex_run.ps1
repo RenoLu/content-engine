@@ -29,15 +29,15 @@ function Write-Log($msg) {
 
 Write-Log ("`n==== {0} : codex exec start ====" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"))
 
-# -m gpt-5.5           : gpt-5.6-sol (CLI default) errors on 0.133.0
 # --dangerously-bypass : unattended; no approval prompts (externally trusted machine)
 # -C $Dir              : working root so AGENTS.md + the scripts resolve
 #
-# There used to be a `-c mcp_servers={}` here claiming to skip MCP servers. It
-# does not: config tables merge rather than replace, so [mcp_servers.robinhood]
-# in ~/.codex/config.toml still loads and still logs its OAuth failure. Dropped
-# rather than left in place pretending to work. To actually silence it, remove
-# that server from config.toml or re-authenticate it.
+# Two workarounds were dropped here on 2026-07-18 after upgrading the CLI from
+# 0.133.0 to 0.144.6, both of which had outlived their reason:
+#   -m gpt-5.5        : pinned only because gpt-5.6-sol (the default) errored on
+#                       0.133.0. It works now, so run the default.
+#   -c mcp_servers={} : claimed to skip MCP servers, but never did. Config tables
+#                       merge rather than replace, so the servers loaded anyway.
 
 # Count what is actually posted before and after. Codex exits 0 whenever it
 # successfully REPORTS an outcome, including "skipped: bridge down", so its exit
@@ -67,7 +67,7 @@ $before = Get-PostedCount
 # with a stack-looking header, which buried the one line that matters. Letting
 # cmd do the redirection keeps stderr as plain text, and <NUL closes stdin so
 # codex never blocks waiting on a tty. $LASTEXITCODE still comes back intact.
-$cmdLine = 'codex.cmd exec "{0}" -m gpt-5.5 --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -C "{1}" -o "{2}" 1>>"{3}" 2>>"{4}" <NUL' `
+$cmdLine = 'codex.cmd exec "{0}" --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -C "{1}" -o "{2}" 1>>"{3}" 2>>"{4}" <NUL' `
   -f $prompt, $Dir, $Last, $Out, $Err
 & cmd /c $cmdLine
 $code = $LASTEXITCODE
