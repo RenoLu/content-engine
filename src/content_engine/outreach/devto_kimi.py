@@ -136,7 +136,7 @@ class DevtoKimiRunner:
         self.store = store
         self.commenter = commenter
         self.adapter = adapter or DevtoAdapter(config.settings, config)
-        self.kimi = kimi or KimiBridge(session=_SESSION)
+        self.kimi = kimi or KimiBridge(session=_SESSION, home="https://dev.to")
         self._sleeper = sleeper
 
     def discover(self) -> list[Target]:

@@ -111,3 +111,45 @@ def test_exclusion_rule_targets_strangers_only():
     # currently at a former employer
     assert _exclusion_reason({"canFollow": True, "actor": "Sam Lee 3rd+ Quant at Susquehanna"})
     assert _exclusion_reason({"canFollow": True, "actor": "Amy Ng 2nd Nurse at Penn Medicine"})
+
+
+def test_healthy_rebinds_a_stale_session():
+    """A session whose tab is gone 502s on a bare evaluate even though the bridge
+    is fine. healthy() must navigate to bind a tab and re-check, not report the
+    bridge down and silently skip the run."""
+    from content_engine.outreach.linkedin_kimi import KimiBridge
+
+    calls = []
+
+    class Bridge(KimiBridge):
+        def __init__(self):
+            super().__init__(home="https://dev.to")
+
+        def _cmd(self, action, args):
+            calls.append(action)
+            if action == "evaluate" and calls.count("evaluate") == 1:
+                raise RuntimeError("502 Bad Gateway")   # stale, unbound tab
+            return {}
+
+    import content_engine.outreach.linkedin_kimi as mod
+    slept, mod.time.sleep = [], lambda s: slept.append(s)
+    try:
+        assert Bridge().healthy() is True
+    finally:
+        mod.time.sleep = __import__("time").sleep
+    assert calls == ["evaluate", "navigate", "evaluate"]
+
+
+def test_healthy_false_when_bridge_really_down():
+    from content_engine.outreach.linkedin_kimi import KimiBridge
+
+    class Dead(KimiBridge):
+        def _cmd(self, action, args):
+            raise RuntimeError("connection refused")
+
+    import content_engine.outreach.linkedin_kimi as mod
+    mod.time.sleep = lambda s: None
+    try:
+        assert Dead().healthy() is False
+    finally:
+        mod.time.sleep = __import__("time").sleep

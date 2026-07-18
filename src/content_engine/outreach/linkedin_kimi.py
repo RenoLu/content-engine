@@ -43,9 +43,13 @@ class KimiBridge:
     """Minimal client for the Kimi WebBridge daemon."""
 
     def __init__(self, base: str = _DAEMON, session: str = _SESSION,
-                 client: httpx.Client | None = None):
+                 client: httpx.Client | None = None,
+                 home: str = "https://www.linkedin.com/feed/"):
         self.base = base
         self.session = session
+        # page healthy() navigates to when it needs to bind a tab; set it per
+        # lane so a session never lands somewhere unrelated to its work
+        self.home = home
         self._client = client or httpx.Client(timeout=45.0)
 
     def _cmd(self, action: str, args: dict) -> dict:
@@ -58,8 +62,22 @@ class KimiBridge:
         return data.get("data", {})
 
     def healthy(self) -> bool:
+        """True when the daemon AND extension are reachable.
+
+        A session whose tab is gone (every runner closes its session when it
+        finishes) 502s on a bare evaluate even though the bridge is perfectly
+        healthy. Treating that as "bridge down" silently skips scheduled runs,
+        so bind a tab with a navigate and re-check before giving up. Only a
+        failure after that is a real outage.
+        """
         try:
-            # a no-op evaluate confirms daemon + extension are live
+            self._cmd("evaluate", {"code": "1"})
+            return True
+        except Exception:
+            pass
+        try:
+            self.navigate(self.home)
+            time.sleep(3)
             self._cmd("evaluate", {"code": "1"})
             return True
         except Exception:
