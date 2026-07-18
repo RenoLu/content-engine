@@ -1,0 +1,74 @@
+[
+  {
+    "prefix": "0001",
+    "title": "Ponytail",
+    "url": "https://dev.to/renolu/ponytail-teaches-your-ai-agent-to-write-less-code-on-purpose-4eid",
+    "text": "Most AI coding tools race to write more code. Ponytail does the opposite: it teaches an agent to write less, on purpose, by making it justify every file it touches. We wrote up why that restraint is the interesting part."
+  },
+  {
+    "prefix": "0002",
+    "title": "Odysseus",
+    "url": "https://dev.to/renolu/odysseus-is-a-self-hosted-ai-workspace-that-wants-to-be-your-whole-desk-3gfp",
+    "text": "Odysseus is a self-hosted AI workspace that wants to be your whole desk, not another chat window. The bet is that keeping your notes, tasks, and agent in one place you control beats stitching together five SaaS tools. Our read on where that holds up."
+  },
+  {
+    "prefix": "0003",
+    "title": "Omnigent",
+    "url": "https://dev.to/renolu/omnigent-is-a-harness-for-your-harnesses-one-layer-over-claude-code-codex-and-the-rest-16d7",
+    "text": "If you already run Claude Code, Codex, and a couple of other agents, Omnigent is a harness that sits over all of them so you drive one layer instead of switching context. We looked at what that consolidation buys you and what it costs."
+  },
+  {
+    "prefix": "0004",
+    "title": "Vercel eve",
+    "url": "https://dev.to/renolu/with-vercels-eve-your-ai-agent-is-a-directory-2bpd",
+    "text": "Vercel's eve treats your AI agent as a directory of files you can read, diff, and version, not a black box. For teams that need to audit what an agent actually did, that structure matters more than it sounds. Full writeup."
+  },
+  {
+    "prefix": "0005",
+    "title": "MiMoCode",
+    "url": "https://dev.to/renolu/mimocodes-bet-is-memory-not-the-model-12nd",
+    "text": "MiMoCode's argument is that the bottleneck in coding agents is memory, not the model. It builds the whole tool around persistent context instead of chasing a bigger context window. We unpack whether the bet holds."
+  },
+  {
+    "prefix": "0006",
+    "title": "OpenScience",
+    "url": "https://dev.to/renolu/openscience-runs-the-whole-research-loop-not-just-the-reading-3kp",
+    "text": "OpenScience runs the full research loop, not just the reading step: it forms questions, runs experiments, and checks results. It is an early look at what end-to-end research automation actually requires. Our notes."
+  },
+  {
+    "prefix": "0007",
+    "title": "Dao Code",
+    "url": "https://dev.to/renolu/dao-code-turns-deepseeks-cache-pricing-into-an-agent-architecture-5ffg",
+    "text": "Dao Code turns DeepSeek's cache pricing into an architecture decision, structuring the agent so repeated context stays cheap. It is a clear case of cost shaping design rather than the other way around. Writeup."
+  },
+  {
+    "prefix": "0008",
+    "title": "TickFlow",
+    "url": "https://dev.to/renolu/the-a-share-quant-tool-that-refuses-to-pick-stocks-44pc",
+    "text": "A quant tool that refuses to pick stocks for you sounds backwards. This one surfaces the signals and hands you the call, which is a more honest posture than most. Why we think that restraint is a feature."
+  },
+  {
+    "prefix": "0009",
+    "title": "Loop Engineering",
+    "url": "https://dev.to/renolu/loop-engineering-score-the-system-that-prompts-your-agents-emd",
+    "text": "The premise of Loop Engineering is blunt: the person writing prompts is now the bottleneck, so design the loop that prompts the agent instead. It ships CLIs that score how loop-ready your setup is. Our breakdown."
+  },
+  {
+    "prefix": "0010",
+    "title": "TestSprite CLI",
+    "url": "https://dev.to/renolu/testsprites-cli-hands-your-coding-agent-one-clean-failure-at-a-time-766",
+    "text": "TestSprite's CLI hands your coding agent one clean failure at a time instead of a wall of red. That single change makes agent-driven test fixing far more reliable. Here is why it works."
+  },
+  {
+    "prefix": "0011",
+    "title": "loopy",
+    "url": "https://dev.to/renolu/loopy-packaging-agent-work-as-bounded-checkable-loops-instead-of-one-shot-prompts-aa",
+    "text": "loopy packages agent work as bounded, checkable loops instead of one big one-shot prompt. Each unit has a clear start, end, and pass condition, which is what makes the output trustworthy. Full writeup."
+  },
+  {
+    "prefix": "0012",
+    "title": "DevSpace",
+    "url": "https://dev.to/renolu/devspace-a-coding-agent-that-keeps-your-code-on-your-own-machine-1045",
+    "text": "DevSpace is a coding agent that keeps your code on your own machine, not on someone's server. For teams with real IP or compliance constraints, that boundary is the whole decision. Our read."
+  }
+]

@@ -16,8 +16,13 @@ class FakeModel:
 
 
 class FakeKimi:
-    def __init__(self):
+    """Stands in for the browser. Models the real comment flow: focus, trusted
+    typing, submit, then the post-submit verification read."""
+
+    def __init__(self, logged_in=True):
         self.actions = []
+        self.logged_in = logged_in
+        self.typed = ""
 
     def healthy(self):
         return True
@@ -26,13 +31,30 @@ class FakeKimi:
         self.actions.append(("nav", url))
         return {}
 
+    def key_type(self, text):
+        self.actions.append(("type", text))
+        self.typed += text
+        return {}
+
+    def mouse_click(self, x, y):
+        self.actions.append(("click", (x, y)))
+        return {}
+
     def evaluate(self, code):
+        if "user-profile-dropdown" in code:
+            return "yes" if self.logged_in else "no"
         if "#reaction-butt-like" in code:
             self.actions.append(("like", None)); return "ok"
         if 'Follow user:' in code:
             self.actions.append(("follow", None)); return "ok"
-        if "#text-area" in code:
-            self.actions.append(("comment", None)); return "sent"
+        if "scrollIntoView" in code:                      # locate comment box
+            return '{"ok":true,"x":10,"y":20}'
+        if "return t?(t.value||'').length:-1" in code:    # typed-length probe
+            return len(self.typed)
+        if "#new_comment" in code:                        # submit
+            self.actions.append(("comment", self.typed)); return '{"ok":true,"len":%d}' % len(self.typed)
+        if "document.body.innerText" in code:             # verify it landed
+            return "present"
         return "ok"
 
     def close_session(self):
@@ -105,3 +127,42 @@ def test_devto_reports_kimi_down(settings):
     runner, _ = _make(settings, Down(), _targets(1), mode="live")
     out = runner.run()
     assert "error" in out
+
+
+def test_devto_refuses_when_logged_out(settings):
+    """Logged out, DEV.to still renders the comment box and reaction buttons and
+    they silently no-op, so the lane must refuse rather than report success."""
+    kimi = FakeKimi(logged_in=False)
+    runner, _ = _make(settings, kimi, _targets(2), mode="live")
+    summary = runner.run()
+    assert summary["error"] == "not logged in to DEV.to"
+    kinds = [a for a, _ in kimi.actions]
+    assert "like" not in kinds and "comment" not in kinds and "follow" not in kinds
+
+
+def test_devto_reply_fails_when_comment_not_on_page(settings):
+    """A click on Submit is not proof. If the comment is not visible afterwards
+    the action must be recorded failed, never executed."""
+    kimi = FakeKimi()
+    kimi.evaluate_absent = True
+    real_eval = kimi.evaluate
+
+    def evaluate(code):
+        if "document.body.innerText" in code:
+            return "absent"
+        return real_eval(code)
+
+    kimi.evaluate = evaluate
+    runner, store = _make(settings, kimi, _targets(1), mode="live")
+    summary = runner.run()
+    assert summary["actions"]["reply"] == {"failed": 1}
+
+
+def test_devto_reply_fails_when_keystrokes_do_not_land(settings):
+    """If trusted typing did not reach the box, submitting would post nothing."""
+    kimi = FakeKimi()
+    kimi.key_type = lambda text: kimi.actions.append(("type", ""))  # swallow input
+    runner, store = _make(settings, kimi, _targets(1), mode="live")
+    summary = runner.run()
+    assert summary["actions"]["reply"] == {"failed": 1}
+    assert ("comment", None) not in kimi.actions

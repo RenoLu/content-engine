@@ -64,24 +64,58 @@ _FOLLOW_JS = r"""
 """
 
 
-def _comment_js(text: str) -> str:
-    """Set the comment textarea value (React-safe) and submit the form."""
-    return r"""
+# A logged-out visitor still gets #text-area and the reaction buttons, so the
+# only trustworthy signal is the header profile menu / auth cookie.
+_LOGGED_IN_JS = r"""
+(()=>{
+  const menu=document.querySelector('#user-profile-dropdown, .crayons-header__link--profile, [data-testid="user-profile-dropdown"]');
+  const loginLink=[...document.querySelectorAll('a')].some(a=>/^(log in|sign in)$/i.test((a.innerText||'').trim()));
+  return (menu && !loginLink) ? "yes" : "no";
+})()
+"""
+
+
+# Scroll the comment box into view and hand back its centre, so the caller can
+# focus it with a TRUSTED click. A synthetic value write plus input/change events
+# does not reach the editor's own state, so Submit fires on an empty field and
+# the comment is silently dropped.
+_FOCUS_COMMENT_JS = r"""
 (()=>{
   const t=document.querySelector('#text-area');
-  if(!t) return "no_textarea";
-  t.focus();
-  const set=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value').set;
-  set.call(t, %s);
-  t.dispatchEvent(new Event('input',{bubbles:true}));
-  t.dispatchEvent(new Event('change',{bubbles:true}));
-  const f=document.querySelector('#new_comment');
-  const btn=f?[...f.querySelectorAll('button')].find(x=>/^submit$/i.test((x.innerText||'').trim())&&!x.disabled):null;
-  if(!btn) return "no_submit";
-  btn.click();
-  return "sent";
+  if(!t) return JSON.stringify({ok:false,why:"no_textarea"});
+  t.scrollIntoView({block:'center'});
+  const r=t.getBoundingClientRect();
+  return JSON.stringify({ok:true,x:r.left+r.width/2,y:r.top+r.height/2});
 })()
-""" % json.dumps(text)
+"""
+
+_SUBMIT_COMMENT_JS = r"""
+(()=>{
+  const t=document.querySelector('#text-area');
+  if(!t) return JSON.stringify({ok:false,why:"no_textarea"});
+  const f=document.querySelector('#new_comment');
+  const btn=f?[...f.querySelectorAll('button')].find(
+      x=>/^submit$/i.test((x.innerText||'').trim())&&!x.disabled):null;
+  if(!btn) return JSON.stringify({ok:false,why:"no_submit",len:(t.value||'').length});
+  btn.click();
+  return JSON.stringify({ok:true,len:(t.value||'').length});
+})()
+"""
+
+
+def _typed_len_js() -> str:
+    return r"""(()=>{const t=document.querySelector('#text-area');
+        return t?(t.value||'').length:-1;})()"""
+
+
+def _verify_comment_js(text: str) -> str:
+    """Confirm the comment is actually on the page after submit. DEV.to renders
+    posted comments server-side, so a missing probe means it never landed."""
+    probe = text[:60]
+    return r"""
+(()=>{const t=document.body.innerText;
+  return t.indexOf(%s)>=0 ? "present" : "absent";})()
+""" % json.dumps(probe)
 
 
 class DevtoKimiRunner:
@@ -109,6 +143,35 @@ class DevtoKimiRunner:
         cap = self.config.caps_for(self.name).for_action(at.value)
         return cap - self.store.count_today(self.name, at.value)
 
+    def _logged_in(self) -> bool:
+        self.kimi.navigate("https://dev.to", new_tab=False)
+        self._sleeper(3.0)
+        return self.kimi.evaluate(_LOGGED_IN_JS) == "yes"
+
+    def _post_comment(self, comment: str) -> str:
+        """Type the comment with trusted keystrokes, submit, then verify it is
+        really on the page. Returns "ok" only when the text is visible after
+        submit; every failure mode gets its own string so the log is honest."""
+        spot = json.loads(str(self.kimi.evaluate(_FOCUS_COMMENT_JS)))
+        if not spot.get("ok"):
+            return str(spot.get("why", "no_textarea"))
+        self.kimi.mouse_click(spot["x"], spot["y"])
+        self._sleeper(0.5)
+        self.kimi.key_type(comment)
+        self._sleeper(0.8)
+
+        typed = int(self.kimi.evaluate(_typed_len_js()) or -1)
+        if typed < len(comment) - 2:
+            # the keystrokes did not land, so submitting would post nothing
+            return f"typed_only_{typed}_of_{len(comment)}"
+
+        res = json.loads(str(self.kimi.evaluate(_SUBMIT_COMMENT_JS)))
+        if not res.get("ok"):
+            return str(res.get("why", "no_submit"))
+        self._sleeper(4.0)
+        return "ok" if self.kimi.evaluate(_verify_comment_js(comment)) == "present" \
+            else "submitted_but_absent"
+
     def _act(self, target: Target, at: ActionType, comment: str = "") -> ActionResult:
         if not self.config.is_live:
             status = "pending_approval" if self.config.approval else "dry_run"
@@ -121,8 +184,7 @@ class DevtoKimiRunner:
                 if out == "already":
                     return ActionResult(self.name, at, target.key, "skipped", detail="already following")
             elif at == ActionType.REPLY:
-                out = self.kimi.evaluate(_comment_js(comment))
-                out = "ok" if out == "sent" else out
+                out = self._post_comment(comment)
             else:  # pragma: no cover
                 out = "unsupported"
             if out == "ok":
@@ -136,6 +198,11 @@ class DevtoKimiRunner:
             return {"platform": self.name, "enabled": False}
         if not self.kimi.healthy():
             return {"platform": self.name, "error": "kimi WebBridge not healthy"}
+        if not self._logged_in():
+            # Logged out, DEV.to still renders the comment form and the reaction
+            # buttons, they just no-op. Every action would report success and do
+            # nothing, so refuse the whole lane instead.
+            return {"platform": self.name, "error": "not logged in to DEV.to"}
 
         results: list[ActionResult] = []
         for target in self.discover():

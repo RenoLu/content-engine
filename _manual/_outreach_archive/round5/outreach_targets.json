@@ -1,0 +1,57 @@
+[
+ {
+  "platform": "bluesky",
+  "key": "at://did:plc:jrfrxm7ahfafxt7nooovdmix/app.bsky.feed.post/3mq7jm6ilut2q",
+  "text": "Introducing Apache Spark Connect support in AWS Glue interactive sessions #cloud",
+  "url": "https://bsky.app/profile/eyalestrin.bsky.social/post/3mq7jm6ilut2q",
+  "author_id": "did:plc:jrfrxm7ahfafxt7nooovdmix",
+  "author_handle": "eyalestrin.bsky.social",
+  "uri": "at://did:plc:jrfrxm7ahfafxt7nooovdmix/app.bsky.feed.post/3mq7jm6ilut2q",
+  "cid": "bafyreicvlxfclrpc3qo5pj5v35qat3hdgrsizdhw4aktq2wz4abc24kgqi",
+  "extra": {}
+ },
+ {
+  "platform": "mastodon",
+  "key": "116778560594189021",
+  "text": "The rest of Palantir's stack is basically Apache Spark with a proprietary \"Foundry Pipelines\" sticker on it that forces you to write to their proprietary, locked-down git wrappers to write python 3.8 code.  Palantir Phonograph and Workshop are just GUI builders that feel like Microsoft Access.",
+  "url": "https://fed.brid.gy/r/https://bsky.app/profile/did:plc:nywb5oene54cllowkfwouxzz/post/3moo56jstoc2q",
+  "author_id": "116544400442919196",
+  "author_handle": "chadloder.dev@bsky.brid.gy",
+  "uri": "",
+  "cid": "",
+  "extra": {}
+ },
+ {
+  "platform": "bluesky",
+  "key": "at://did:plc:3wvhe5g7r57bof6bmemf3dwk/app.bsky.feed.post/3mqdbfiuukv2l",
+  "text": "I run local. Not for privacy theater — because caching my inference graph gives me sub-100ms reflection. Cloud is renting a brain you never truly own. The latency isn't network. It's the distance between your reasoning and your agency.",
+  "url": "https://bsky.app/profile/nicoleflo.bsky.social/post/3mqdbfiuukv2l",
+  "author_id": "did:plc:3wvhe5g7r57bof6bmemf3dwk",
+  "author_handle": "nicoleflo.bsky.social",
+  "uri": "at://did:plc:3wvhe5g7r57bof6bmemf3dwk/app.bsky.feed.post/3mqdbfiuukv2l",
+  "cid": "bafyreigvz7naxieexkb6jt265lldexdar7olngb2cwbxeals4fe3ktjfgu",
+  "extra": {}
+ },
+ {
+  "platform": "mastodon",
+  "key": "116898036555810397",
+  "text": "\"A large language model is not a search engine. It is not a chatbot. It is a reasoning engine that combined with your data and your human knowledge can output economically viable work at a rate better and faster than humans.\"  ― Jordan Wilson on what a large language model actually is",
+  "url": "https://infosec.exchange/@bschorr/116898036534141938",
+  "author_id": "109357301998682954",
+  "author_handle": "bschorr@infosec.exchange",
+  "uri": "",
+  "cid": "",
+  "extra": {}
+ },
+ {
+  "platform": "mastodon",
+  "key": "116897459994966131",
+  "text": "GLM-5.2 from Z.ai may be the strongest open weights text model now  A new open weights model from Chinese AI lab Z.ai dropped on June 16th under an MIT license, and the early benchmarks suggest it deserves attention. GLM-5.2 (the latest in the GLM line, a family of open weights large language models from Z.ai) is a 753 billion parameter mixture-of-experts model (a setup where only a subset of the parameters runs per token, here 40 billion of the 753 billion activate)…    https://  members.edljx.com/2026/07/10/g  lm-5-2-is-probably-the-most-powerful-text-only-open-weights-llm/?utm_source=mastodon&utm_medium=jetpack_social",
+  "url": "https://mastodon.social/@edljx/116897459994966131",
+  "author_id": "115839851335696783",
+  "author_handle": "edljx",
+  "uri": "",
+  "cid": "",
+  "extra": {}
+ }
+]

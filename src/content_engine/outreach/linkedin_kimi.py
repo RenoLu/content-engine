@@ -72,6 +72,17 @@ class KimiBridge:
     def evaluate(self, code: str) -> object:
         return self._cmd("evaluate", {"code": code}).get("value")
 
+    def key_type(self, text: str) -> dict:
+        """Type via trusted CDP key events. Rich editors (DEV.to's comment box,
+        LinkedIn's composer) ignore a synthetic value write because it never
+        reaches the framework's state, so real keystrokes are the only way in."""
+        return self._cmd("key_type", {"text": text})
+
+    def mouse_click(self, x: float, y: float) -> dict:
+        """Trusted click at viewport coords, for focusing an editor that ignores
+        el.focus()."""
+        return self._cmd("mouse_click", {"x": x, "y": y})
+
     def close_session(self) -> None:
         try:
             self._cmd("close_session", {})

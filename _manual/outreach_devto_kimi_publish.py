@@ -25,57 +25,33 @@ from content_engine.outreach.store import OutreachStore
 
 # on-brand articles, keyed by DEV.to author handle
 WANTED_HANDLES = [
-    "matt_frank_usa",
-    "reza_brianca",
-    "roni_das_b1b76c5ee6583027",
-    "datadriven",
-    "ragekill3377",
+    "labyrinthanalytics",
+    "truenorthdata",
+    "vaibhav7387",
 ]
 
 # agent-authored comments keyed by the EXACT article title (== Target.text that
 # discovery returns). A title with no entry gets liked/followed but not commented.
 REPLIES_BY_TITLE = {
-    "Feature Stores: Managing ML Features at Scale":
-        "The part that earns a feature store is online/offline consistency. "
-        "Without one transformation path you train on features you never serve, "
-        "and the skew shows up as accuracy loss. Point-in-time correctness on "
-        "the offline join is the piece most teams underestimate until a "
-        "backfill lies to them.",
+    "LangGraph vs LangChain in 2026: When Each Wins":
+        "The split I keep hitting: LangChain is fine until a step needs to "
+        "retry, branch, or resume after a failure, and then you are hand "
+        "rolling state anyway. LangGraph makes that state explicit, which "
+        "costs more upfront. If the flow is a straight line, the extra "
+        "structure is dead weight.",
 
-    "Feature Stores: The Secret Sauce for Real-Time ML (and Sanity) in Production":
-        "The real-time angle is where cost sneaks in. Streaming features feel "
-        "free until you price the always-on materialization and the state you "
-        "keep warm for low-latency reads. Deciding which features truly need "
-        "sub-second freshness versus a few minutes old is the call that keeps "
-        "the bill sane.",
+    "How I turned Canada's messy open government data into 3 clean data products":
+        "Turning open government data into something usable is mostly a "
+        "maintenance bet. The scrape is a weekend; what kills these projects "
+        "is a province quietly renaming a column two months later. Curious "
+        "whether you added schema checks that fail loudly before the product "
+        "goes stale.",
 
-    "How Delta Lake Brings ACID to a Data Lake":
-        "Worth stressing the guarantee lives in the transaction log, not the "
-        "parquet. The files are just data, the ordered log is the source of "
-        "truth, so a half-written file never corrupts a read. Concurrent "
-        "writers still hit optimistic-concurrency conflicts though, ACID here "
-        "is not serializable for free.",
-
-    "Why Snowflake Separates Storage From Compute":
-        "Separating them lets read concurrency scale without touching storage, "
-        "and you stop paying for idle compute. The catch is cold local cache "
-        "after a warehouse resumes, and a cost model that rewards short bursty "
-        "queries over long full scans. Sizing per workload matters more than "
-        "expected.",
-
-    "3 Staff Engineers Couldn't Pass This Single DE Job Posting":
-        "Usually this is a team's full skill set crammed into one req: batch, "
-        "streaming, modeling, orchestration, and cloud at senior depth. Nobody "
-        "does all of them daily, so even strong engineers miss on breadth, not "
-        "ability. Postings that filter well test depth in one area and "
-        "reasoning in the rest.",
-
-    "Really fast columnar analytics engine":
-        "The wins in columnar come from vectorized execution and late "
-        "materialization, plus encodings the CPU can scan without fully "
-        "decoding. Curious where this sits, a from-scratch engine or a layer "
-        "over a kernel like Arrow or DuckDB. What matters is selective scans, "
-        "not full aggregates.",
+    "Snowflake or Databricks? An Honest Comparison (From 200+ Migrations)":
+        "200 migrations is the useful part here. Most comparisons benchmark on "
+        "clean data nobody actually has. The pattern I see is the decision "
+        "gets made on compute pricing, then the real cost lands in governance "
+        "and how much existing Spark or dbt code has to be rewritten.",
 }
 
 
