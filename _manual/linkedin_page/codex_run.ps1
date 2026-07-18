@@ -30,7 +30,29 @@ $codexArgs = @(
   '-o', $Last
 )
 
+# Count what is actually posted before and after. Codex exits 0 whenever it
+# successfully REPORTS an outcome, including "skipped: bridge down", so its exit
+# code says nothing about whether an article went out. On 07-16 and 07-17 the
+# bridge was down and the task still recorded a clean success. Check the state
+# file instead of trusting the agent's self-report.
+function Get-PostedCount {
+  try { @((Get-Content (Join-Path $Dir "posted.json") -Raw | ConvertFrom-Json).posted).Count }
+  catch { -1 }
+}
+$before = Get-PostedCount
+
 $null | & codex @codexArgs *>&1 | Tee-Object -FilePath $Log -Append
 $code = $LASTEXITCODE
 Add-Content -Path $Log -Value ("==== {0} : codex exec end (exit {1}) ====" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $code) -Encoding utf8
+
+$after = Get-PostedCount
+if ($code -eq 0 -and $after -le $before) {
+  $queued = try { @(Get-Content (Join-Path $Dir "queue.json") -Raw | ConvertFrom-Json).Count } catch { 0 }
+  if ($after -ge $queued) {
+    Add-Content -Path $Log -Value "queue empty - nothing left to post" -Encoding utf8
+  } else {
+    Add-Content -Path $Log -Value "NOTHING POSTED (still $after of $queued) - failing so the run is not recorded as a success" -Encoding utf8
+    exit 4
+  }
+}
 exit $code

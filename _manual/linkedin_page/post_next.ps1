@@ -46,8 +46,19 @@ function Shot($name) {
 }
 
 # ---- 1. health check ----
-try { $h = Cmd "evaluate" @{code="1"}; if (-not $h.ok) { throw "not ok" } }
-catch { Log "BRIDGE DOWN ($($_.Exception.Message)) - skipping this run"; exit 3 }
+# A session with no bound tab 502s on the first evaluate even though the daemon
+# and extension are both fine. Bind a tab with a navigate, then re-check, so a
+# stale session is not misreported as a dead bridge.
+$healthy = $false
+try { $h = Cmd "evaluate" @{code="1"}; $healthy = [bool]$h.ok } catch { $healthy = $false }
+if (-not $healthy) {
+  try {
+    Cmd "navigate" @{url=$AdminUrl; newTab=$false; group_title="AP LinkedIn"} | Out-Null
+    Start-Sleep -Seconds 4
+    $h = Cmd "evaluate" @{code="1"}; $healthy = [bool]$h.ok
+  } catch { $healthy = $false }
+}
+if (-not $healthy) { Log "BRIDGE DOWN (daemon or extension not reachable) - skipping this run"; exit 3 }
 
 # ---- 2. load queue + state ----
 $queue  = Get-Content (Join-Path $Root "queue.json")  -Raw | ConvertFrom-Json
