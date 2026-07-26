@@ -99,7 +99,10 @@ if ($code -eq 0 -and $after -le $before) {
 $Py = "C:\Coding Space\job-app\job_app_agent\.venv\Scripts\python.exe"
 Write-Log ("---- {0} : personal lane start ----" -f (Get-Date -Format "HH:mm:ss"))
 if (Test-Path $Py) {
-  & $Py (Join-Path $Dir "article_cdp.py") --next --max 1
+  # --from-published: queue.json only ever held the first 12 pieces. Everything the
+  # content engine has published to dev.to since then is in _manual/published/, so the
+  # drip keeps going instead of stopping at 12.
+  & $Py (Join-Path $Dir "article_cdp.py") --next --max 1 --from-published
   Write-Log ("---- {0} : personal lane end (exit {1}) ----" -f (Get-Date -Format "HH:mm:ss"), $LASTEXITCODE)
 } else {
   Write-Log ("---- {0} : personal lane SKIPPED (no python at {1}) ----" -f (Get-Date -Format "HH:mm:ss"), $Py)

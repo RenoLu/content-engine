@@ -55,6 +55,8 @@ ASSETS = ROOT.parent.parent / "assets" / "posts"
 QUEUE = ROOT / "queue.json"
 STATE = ROOT / "posted_personal.json"
 MAP_FILE = ROOT / "articles_map.json"
+REPO = ROOT.parent.parent            # content-engine checkout root
+CACHE = ROOT / ".covers"             # covers fetched from image_url
 LOG = ROOT / "post_cdp_log.txt"
 SHOTS = ROOT / "shots"
 CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
@@ -411,8 +413,51 @@ def load_sources() -> dict[str, dict]:
     out = {}
     for f in sorted(SRC_DIR.glob("0*.json")):
         prefix = f.name.split("-")[0]
-        out[prefix] = json.loads(f.read_text(encoding="utf-8"))
+        out[prefix] = json.loads(f.read_text(encoding="utf-8-sig"))
+    out.update(_sources_from_origin(out))
     return out
+
+
+def _git(*args: str, binary: bool = False):
+    """Run git inside the content-engine checkout. Returns None on any failure."""
+    try:
+        r = subprocess.run(["git", "-C", str(REPO), *args], capture_output=True,
+                           timeout=90, text=not binary,
+                           encoding=None if binary else "utf-8")
+        return r.stdout if r.returncode == 0 else None
+    except Exception:
+        return None
+
+
+def _sources_from_origin(have: dict[str, dict]) -> dict[str, dict]:
+    """Read published articles straight out of origin/main.
+
+    The dev.to publisher is a GitHub Action: it commits each new _manual/published/*.json
+    to main from CI, so this checkout is usually several publishes behind and the drip
+    would silently see nothing new. Reading the blobs from origin/main keeps the LinkedIn
+    lane independent of whether anyone remembered to pull, and touches no working file.
+    """
+    _git("fetch", "-q", "origin")
+    listing = _git("ls-tree", "--name-only", "origin/main:_manual/published")
+    if not listing:
+        return {}
+    extra: dict[str, dict] = {}
+    for name in listing.split():
+        if not name.endswith(".json"):
+            continue
+        prefix = name.split("-")[0]
+        if prefix in have:
+            continue
+        blob = _git("show", f"origin/main:_manual/published/{name}")
+        if not blob:
+            continue
+        try:
+            extra[prefix] = json.loads(blob)
+        except json.JSONDecodeError:
+            continue
+    if extra:
+        log(f"read {len(extra)} published article(s) from origin/main: {sorted(extra)}")
+    return extra
 
 
 def refresh_map(page, sources: dict[str, dict]) -> dict[str, dict]:
@@ -470,9 +515,33 @@ def stamp() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
-def cover_for(prefix: str) -> Path:
+def cover_for(prefix: str, art: dict | None = None) -> Path:
+    """Local asset first, then whatever image_url the published article recorded.
+
+    Newer pieces get their cover generated at publish time (Pollinations) rather than
+    committed as a jpg, so image_url is the only copy that exists.
+    """
     hits = sorted(ASSETS.glob(f"{prefix}-*.jpg")) + sorted(ASSETS.glob(f"{prefix}-*.png"))
-    return hits[0] if hits else ASSETS / f"{prefix}-missing.jpg"
+    if hits:
+        return hits[0]
+    url = (art or {}).get("image_url") or ""
+    if url.startswith("http"):
+        CACHE.mkdir(exist_ok=True)
+        dest = CACHE / f"{prefix}.jpg"
+        if dest.exists() and dest.stat().st_size > 1000:
+            return dest
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "content-engine/linkedin"})
+            with urllib.request.urlopen(req, timeout=90) as r:
+                data = r.read()
+            if len(data) > 1000:
+                dest.write_bytes(data)
+                log(f"  fetched cover for {prefix} from image_url ({len(data)} bytes)")
+                return dest
+            log(f"  cover download for {prefix} was {len(data)} bytes, ignoring")
+        except Exception as exc:
+            log(f"  cover download failed for {prefix}: {exc}")
+    return ASSETS / f"{prefix}-missing.jpg"
 
 
 # ---------------------------------------------------------------- commands
@@ -514,7 +583,7 @@ def fix_articles(prefixes: list[str], dry: bool) -> int:
             if norm(got_title) != norm(art["title"]):
                 log(f"  WARN: title mismatch '{got_title[:40]}' - not updating")
                 continue
-            set_cover(page, cover_for(prefix))
+            set_cover(page, cover_for(prefix, art))
             SHOTS.mkdir(exist_ok=True)
             page.screenshot(path=str(SHOTS / f"fix_compose_{prefix}.png"))
             if not ok:
@@ -591,7 +660,7 @@ def post_next(max_n: int, dry: bool, from_published: bool = False) -> int:
             if norm(got_title) != norm(art["title"]):
                 log(f"  WARN: title mismatch '{got_title[:40]}' - not publishing")
                 break
-            set_cover(page, cover_for(prefix))
+            set_cover(page, cover_for(prefix, art))
             SHOTS.mkdir(exist_ok=True)
             page.screenshot(path=str(SHOTS / f"cdp_compose_{prefix}.png"))
             if not ok:
