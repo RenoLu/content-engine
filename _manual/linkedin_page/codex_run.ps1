@@ -74,13 +74,36 @@ $code = $LASTEXITCODE
 Write-Log ("==== {0} : codex exec end (exit {1}) ====" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $code)
 
 $after = Get-PostedCount
+$fail = $false
 if ($code -eq 0 -and $after -le $before) {
   $queued = Get-QueuedCount
   if ($queued -gt 0 -and $after -ge $queued) {
     Write-Log "queue empty - nothing left to post"
   } else {
     Write-Log "NOTHING POSTED (still $after of $queued) - failing so the run is not recorded as a success"
-    exit 4
+    $fail = $true
   }
 }
+
+# Personal-profile lane, same queue and same daily cadence, run SEQUENTIALLY here rather
+# than as its own scheduled task so the two lanes never drive a browser at the same time.
+# It keeps its own state file (posted_personal.json) and its own duplicate guard, so a
+# failure on either side leaves the other untouched.
+#
+# Since 2026-07-26 this lane runs article_cdp.py on the debug Chrome (:9222) instead of
+# post_personal.ps1 on the Kimi bridge. Kimi can only fire synthetic events, and the
+# article editor's Style dropdown ignores those, so every article it published came out
+# as one flat wall of paragraphs with no headings and no cover image. Playwright-over-CDP
+# clicks are real, so headings, bullet lists, code blocks and the cover upload all work.
+# Python comes from the job-app venv, the only env here with Playwright installed.
+$Py = "C:\Coding Space\job-app\job_app_agent\.venv\Scripts\python.exe"
+Write-Log ("---- {0} : personal lane start ----" -f (Get-Date -Format "HH:mm:ss"))
+if (Test-Path $Py) {
+  & $Py (Join-Path $Dir "article_cdp.py") --next --max 1
+  Write-Log ("---- {0} : personal lane end (exit {1}) ----" -f (Get-Date -Format "HH:mm:ss"), $LASTEXITCODE)
+} else {
+  Write-Log ("---- {0} : personal lane SKIPPED (no python at {1}) ----" -f (Get-Date -Format "HH:mm:ss"), $Py)
+}
+
+if ($fail) { exit 4 }
 exit $code
