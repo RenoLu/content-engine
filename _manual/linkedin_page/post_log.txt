@@ -22,3 +22,19 @@
 2026-07-18 17:00:37  composing 0008 (TickFlow)
 2026-07-18 17:01:06    POSTED 0008 (https://dev.to/renolu/the-a-share-quant-tool-that-refuses-to-pick-stocks-44pc)
 2026-07-18 17:01:10  run complete: posted 1 this run, 4 remaining
+2026-07-18 19:13:55  composing 0009 (Loop Engineering)
+2026-07-18 19:15:09    POSTED 0009 (https://dev.to/renolu/loop-engineering-score-the-system-that-prompts-your-agents-emd)
+2026-07-18 19:15:13  run complete: posted 1 this run, 3 remaining
+2026-07-19 17:01:33  composing 0010 (TestSprite CLI)
+2026-07-19 17:01:54    POSTED 0010 (https://dev.to/renolu/testsprites-cli-hands-your-coding-agent-one-clean-failure-at-a-time-766)
+2026-07-19 17:01:58  run complete: posted 1 this run, 2 remaining
+2026-07-20 17:00:42  composing 0011 (loopy)
+2026-07-20 17:02:32    POSTED 0011 (https://dev.to/renolu/loopy-packaging-agent-work-as-bounded-checkable-loops-instead-of-one-shot-prompts-aa)
+2026-07-20 17:02:36  run complete: posted 1 this run, 1 remaining
+2026-07-21 17:00:41  composing 0012 (DevSpace)
+2026-07-21 17:01:05    POSTED 0012 (https://dev.to/renolu/devspace-a-coding-agent-that-keeps-your-code-on-your-own-machine-1045)
+2026-07-21 17:01:09  run complete: posted 1 this run, 0 remaining
+2026-07-22 17:00:37  queue empty - all 12 articles posted
+2026-07-23 17:00:51  queue empty - all 12 articles posted
+2026-07-24 17:00:27  queue empty - all 12 articles posted
+2026-07-26 09:42:46  queue empty - all 12 articles posted
