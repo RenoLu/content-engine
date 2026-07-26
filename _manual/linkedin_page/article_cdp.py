@@ -205,6 +205,12 @@ JS_CARET_IN = r"""(txt) => {
   return true;
 }"""
 
+JS_BLOCK_TAG = r"""(txt) => {
+  const ed=document.querySelector('[contenteditable=true]');
+  const n=[...ed.children].find(x=>(x.innerText||'').replace(/\s+/g,' ').trim()===txt);
+  return n ? n.tagName : null;
+}"""
+
 JS_SELECT_RUN = r"""(texts) => {
   const ed=document.querySelector('[contenteditable=true]');
   const key=t=>t.replace(/\s+/g,' ').trim();
@@ -230,6 +236,18 @@ JS_HAS_COVER = r"""() => {
   const imgs=[...document.querySelectorAll('img')];
   return imgs.some(i=>/article-editor|cover/i.test(i.className.toString()) && (i.src||'').length>40);
 }"""
+
+
+def shot(page, name: str) -> None:
+    """Audit screenshots must never be able to fail a run. After a cover upload the
+    editor keeps a font/layout task busy and page.screenshot() can hang past its
+    timeout, which is what silently killed the 2026-07-26 17:00 run one step before
+    publishing."""
+    SHOTS.mkdir(exist_ok=True)
+    try:
+        page.screenshot(path=str(SHOTS / name), timeout=15_000)
+    except Exception as exc:
+        log(f"  (screenshot {name} skipped: {type(exc).__name__})")
 
 
 def open_page(browser, url: str):
@@ -266,10 +284,24 @@ def focus_body(page) -> None:
     raise RuntimeError("article body never took focus")
 
 
-def style_as(page, which: str) -> bool:
-    """which: normal | heading-1 (Heading) | heading-2 (Subheading).
-    The menu renders its items only when the editor has a live block selection, so an
-    empty menu means the caret was lost: close it and try again."""
+def style_as(page, which: str, *, use_menu: bool = False) -> bool:
+    """Set the block style for the block holding the caret.
+
+    Keyboard first: Control+Alt+2 gives Heading (h2), Control+Alt+3 Subheading (h3).
+    The Style dropdown is only a fallback. Its items exist in the DOM solely while the
+    menu is open and require a live editor selection, and it intermittently opens empty
+    even when the selection is right, which silently dropped a heading from the
+    2026-07-26 17:00 run and survived three retries. The shortcut has no such state.
+    """
+    combo = {"heading-1": "Control+Alt+2", "heading-2": "Control+Alt+3"}.get(which)
+    if combo and not use_menu:
+        try:
+            page.keyboard.press(combo)
+            page.wait_for_timeout(500)
+            return True
+        except Exception as exc:
+            log(f"  (shortcut {combo} failed: {type(exc).__name__}, falling back to the menu)")
+
     item = f'[class*="heading-dropdown-item--{which}"]'
     trigger = page.get_by_role("button", name="Style")
     for _ in range(3):
@@ -301,6 +333,27 @@ def clear_body(page) -> None:
         raise RuntimeError(f"body not cleared ({len(shape['text'])} chars left)")
 
 
+def ensure_headings(page, headings: list[dict], attempts: int = 3) -> None:
+    for h in headings:
+        text = norm(h["text"])
+        want = "heading-1" if h["kind"] == "h2" else "heading-2"
+        for attempt in range(attempts):
+            tag = page.evaluate(JS_BLOCK_TAG, text)
+            if tag is None:
+                log(f"  WARN: heading block vanished: {text[:40]}")
+                break
+            if re.fullmatch(r"H[1-6]", tag):
+                break
+            if attempt:
+                page.wait_for_timeout(1200)
+            focus_body(page)
+            if not page.evaluate(JS_CARET_IN, text):
+                continue
+            style_as(page, want, use_menu=attempt > 0)
+        else:
+            log(f"  WARN: heading still unformatted after {attempts} tries: {text[:40]}")
+
+
 def compose(page, blocks: list[dict]) -> dict:
     """Type the blocks into an empty body, applying structure as it goes."""
     focus_body(page)
@@ -315,8 +368,7 @@ def compose(page, blocks: list[dict]) -> dict:
             page.keyboard.insert_text(b["text"])
         elif b["kind"] in ("h2", "h3"):
             page.keyboard.insert_text(b["text"])
-            if not style_as(page, "heading-1" if b["kind"] == "h2" else "heading-2"):
-                log(f"  WARN: heading not applied: {b['text'][:40]}")
+            style_as(page, "heading-1" if b["kind"] == "h2" else "heading-2")
             # the caret can land at the start of the converted block; go back to its end
             page.evaluate(JS_CARET_IN, norm(b["text"]))
         elif b["kind"] == "bullets":
@@ -337,6 +389,12 @@ def compose(page, blocks: list[dict]) -> dict:
                 page.keyboard.insert_text(line)
             code_runs.append([norm(x) for x in b["lines"] if norm(x)])
         page.wait_for_timeout(120)
+
+    # Headings are the one operation that intermittently no-ops: the Style menu renders
+    # its items only for a live selection and sometimes comes up empty anyway. Re-check
+    # every heading against the DOM and retry the ones still sitting as paragraphs, which
+    # is cheaper than losing the whole run to the verification gate.
+    ensure_headings(page, [b for b in blocks if b["kind"] in ("h2", "h3")])
 
     # code blocks are converted after the fact: a run of paragraphs selected, then toggled
     for run in code_runs:
@@ -584,8 +642,7 @@ def fix_articles(prefixes: list[str], dry: bool) -> int:
                 log(f"  WARN: title mismatch '{got_title[:40]}' - not updating")
                 continue
             set_cover(page, cover_for(prefix, art))
-            SHOTS.mkdir(exist_ok=True)
-            page.screenshot(path=str(SHOTS / f"fix_compose_{prefix}.png"))
+            shot(page, f"fix_compose_{prefix}.png")
             if not ok:
                 log(f"  WARN: verification failed for {prefix} - not updating")
                 continue
@@ -603,7 +660,7 @@ def fix_articles(prefixes: list[str], dry: bool) -> int:
                 confirm.first.click()
                 page.wait_for_timeout(4000)
             page.wait_for_timeout(4000)
-            page.screenshot(path=str(SHOTS / f"fix_done_{prefix}.png"))
+            shot(page, f"fix_done_{prefix}.png")
             log(f"  UPDATED {prefix}")
             fixed += 1
     return fixed
@@ -661,8 +718,7 @@ def post_next(max_n: int, dry: bool, from_published: bool = False) -> int:
                 log(f"  WARN: title mismatch '{got_title[:40]}' - not publishing")
                 break
             set_cover(page, cover_for(prefix, art))
-            SHOTS.mkdir(exist_ok=True)
-            page.screenshot(path=str(SHOTS / f"cdp_compose_{prefix}.png"))
+            shot(page, f"cdp_compose_{prefix}.png")
             if not ok:
                 log(f"  WARN: verification failed - not publishing {prefix}")
                 break
@@ -678,7 +734,7 @@ def post_next(max_n: int, dry: bool, from_published: bool = False) -> int:
                 break
             pub.first.click()
             page.wait_for_timeout(9000)
-            page.screenshot(path=str(SHOTS / f"cdp_published_{prefix}.png"))
+            shot(page, f"cdp_published_{prefix}.png")
 
             # a clicked button is not a published article: confirm on the profile
             page.goto(ACTIVITY, wait_until="domcontentloaded", timeout=90_000)
@@ -687,7 +743,7 @@ def post_next(max_n: int, dry: bool, from_published: bool = False) -> int:
                                  art["title"].strip()[:60])
             if not seen:
                 log(f"  WARN: '{art['title'][:40]}' not on the profile - not recording")
-                page.screenshot(path=str(SHOTS / f"cdp_unverified_{prefix}.png"))
+                shot(page, f"cdp_unverified_{prefix}.png")
                 break
             done.append(prefix)
             state["posted"] = done

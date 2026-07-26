@@ -1,0 +1,69 @@
+2026-07-26 11:04:48  0011: repairing loopy: packaging agent work as bounded, checkable loops inst (13 blocks)
+2026-07-26 11:04:59    shape {'blocks': 14, 'h2': 4, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 4411, 'h2': 4, 'h3': 0, 'li': 0}, 'got_chars': 4411}
+2026-07-26 11:05:06    DRY: 0011 composed, not updated
+2026-07-26 11:06:13  0011: repairing loopy: packaging agent work as bounded, checkable loops inst (13 blocks)
+2026-07-26 11:06:25    shape {'blocks': 14, 'h2': 4, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 4411, 'h2': 4, 'h3': 0, 'li': 0}, 'got_chars': 4411}
+2026-07-26 11:06:25    cover already set
+2026-07-26 11:06:33    UPDATED 0011
+2026-07-26 11:07:51  0010: repairing TestSprite's CLI hands your coding agent one clean failure a (13 blocks)
+2026-07-26 11:08:03    shape {'blocks': 15, 'h2': 4, 'h3': 0, 'ul': 1, 'li': 2, 'pre': 0, 'want': {'chars': 3816, 'h2': 4, 'h3': 0, 'li': 3}, 'got_chars': 3816}
+2026-07-26 11:08:10    cover uploaded: 0010-testsprite-cli.jpg
+2026-07-26 11:08:10    WARN: verification failed for 0010 - not updating
+2026-07-26 11:08:17  0008: repairing The A-share quant tool that refuses to pick stocks (12 blocks)
+2026-07-26 11:08:27    shape {'blocks': 13, 'h2': 3, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 3771, 'h2': 3, 'h3': 0, 'li': 0}, 'got_chars': 3771}
+2026-07-26 11:08:33    cover uploaded: 0008-tickflow-stock-panel.jpg
+2026-07-26 11:08:42    UPDATED 0008
+2026-07-26 11:08:49  0007: repairing Dao Code turns DeepSeek's cache pricing into an agent archit (11 blocks)
+2026-07-26 11:08:59    shape {'blocks': 12, 'h2': 3, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 4149, 'h2': 3, 'h3': 0, 'li': 0}, 'got_chars': 4149}
+2026-07-26 11:09:05    cover uploaded: 0007-dao-code.jpg
+2026-07-26 11:09:14    UPDATED 0007
+2026-07-26 11:10:21  0010: repairing TestSprite's CLI hands your coding agent one clean failure a (13 blocks)
+2026-07-26 11:10:33    shape {'blocks': 14, 'h2': 4, 'h3': 0, 'ul': 1, 'li': 3, 'pre': 0, 'want': {'chars': 3816, 'h2': 4, 'h3': 0, 'li': 3}, 'got_chars': 3816}
+2026-07-26 11:10:33    cover already set
+2026-07-26 11:10:33    DRY: 0010 composed, not updated
+2026-07-26 11:11:07  0010: repairing TestSprite's CLI hands your coding agent one clean failure a (13 blocks)
+2026-07-26 11:11:20    shape {'blocks': 14, 'h2': 4, 'h3': 0, 'ul': 1, 'li': 3, 'pre': 0, 'want': {'chars': 3816, 'h2': 4, 'h3': 0, 'li': 3}, 'got_chars': 3816}
+2026-07-26 11:11:20    cover already set
+2026-07-26 11:11:29    UPDATED 0010
+2026-07-26 11:11:35  0006: repairing OpenScience runs the whole research loop, not just the readi (11 blocks)
+2026-07-26 11:11:46    shape {'blocks': 12, 'h2': 3, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 4066, 'h2': 3, 'h3': 0, 'li': 0}, 'got_chars': 4066}
+2026-07-26 11:11:52    cover uploaded: 0006-openscience.jpg
+2026-07-26 11:12:01    UPDATED 0006
+2026-07-26 11:12:07  0005: repairing MiMoCode's bet is memory, not the model (10 blocks)
+2026-07-26 11:12:17    shape {'blocks': 11, 'h2': 3, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 2920, 'h2': 3, 'h3': 0, 'li': 0}, 'got_chars': 2920}
+2026-07-26 11:12:23    cover uploaded: 0005-mimo-code.jpg
+2026-07-26 11:12:32    UPDATED 0005
+2026-07-26 11:13:10  0004: repairing With Vercel's eve, your AI agent is a directory (9 blocks)
+2026-07-26 11:13:20    shape {'blocks': 10, 'h2': 3, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 2674, 'h2': 3, 'h3': 0, 'li': 0}, 'got_chars': 2674}
+2026-07-26 11:13:27    cover uploaded: 0004-eve.jpg
+2026-07-26 11:13:35    UPDATED 0004
+2026-07-26 11:13:42  0001: repairing Ponytail teaches your AI agent to write less code on purpose (12 blocks)
+2026-07-26 11:13:52    shape {'blocks': 13, 'h2': 3, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 4139, 'h2': 3, 'h3': 0, 'li': 0}, 'got_chars': 4139}
+2026-07-26 11:13:52    cover already set
+2026-07-26 11:14:01    UPDATED 0001
+2026-07-26 11:15:47  0012: composing DevSpace: a coding agent that keeps your code on your own ma (13 blocks)
+2026-07-26 11:19:04  0012: composing DevSpace: a coding agent that keeps your code on your own ma (13 blocks)
+2026-07-26 11:19:15    shape {'blocks': 14, 'h2': 4, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 3976, 'h2': 4, 'h3': 0, 'li': 0}, 'got_chars': 3976}
+2026-07-26 11:19:22    cover uploaded: 0012-devspace.jpg
+2026-07-26 11:19:23    DRY: 0012 composed, not published
+2026-07-26 11:19:23  run complete: published 0 this run, 1 remaining
+2026-07-26 11:21:30  0012: composing DevSpace: a coding agent that keeps your code on your own ma (13 blocks)
+2026-07-26 11:21:41    shape {'blocks': 14, 'h2': 4, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 3976, 'h2': 4, 'h3': 0, 'li': 0}, 'got_chars': 3976}
+2026-07-26 11:21:48    cover uploaded: 0012-devspace.jpg
+2026-07-26 11:22:11    PUBLISHED ARTICLE 0012: DevSpace: a coding agent that keeps your code on your own machine
+2026-07-26 11:22:11  run complete: published 1 this run, 0 remaining
+2026-07-26 11:26:50  queue empty - all 12 pieces published (add --from-published to drip the newer ones)
+2026-07-26 17:01:20  0013: composing claude-real-video: feeding an LLM the frames that actually m (12 blocks)
+2026-07-26 17:01:39    WARN: heading not applied: The selection problem it targets
+2026-07-26 17:01:57    shape {'blocks': 13, 'h2': 2, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 4091, 'h2': 3, 'h3': 0, 'li': 0}, 'got_chars': 4091}
+2026-07-26 17:02:07    cover uploaded: 0013-claude-real-video.jpg
+2026-07-26 18:07:27  0013: composing claude-real-video: feeding an LLM the frames that actually m (12 blocks)
+2026-07-26 18:09:20    WARN: heading still unformatted after 3 tries: What you actually get out
+2026-07-26 18:09:49    shape {'blocks': 12, 'h2': 2, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 4091, 'h2': 3, 'h3': 0, 'li': 0}, 'got_chars': 4091}
+2026-07-26 18:09:59    cover uploaded: 0013-claude-real-video.jpg
+2026-07-26 18:20:02  0013: composing claude-real-video: feeding an LLM the frames that actually m (12 blocks)
+2026-07-26 18:20:13    shape {'blocks': 13, 'h2': 3, 'h3': 0, 'ul': 0, 'li': 0, 'pre': 0, 'want': {'chars': 4091, 'h2': 3, 'h3': 0, 'li': 0}, 'got_chars': 4091}
+2026-07-26 18:20:22    cover uploaded: 0013-claude-real-video.jpg
+2026-07-26 18:20:56    (screenshot cdp_published_0013.png skipped: TimeoutError)
+2026-07-26 18:21:04    PUBLISHED ARTICLE 0013: claude-real-video: feeding an LLM the frames that actually matter
+2026-07-26 18:21:04  run complete: published 1 this run, 11 remaining

@@ -38,3 +38,10 @@
 2026-07-23 17:00:51  queue empty - all 12 articles posted
 2026-07-24 17:00:27  queue empty - all 12 articles posted
 2026-07-26 09:42:46  queue empty - all 12 articles posted
+2026-07-26 17:00:42  queue empty - all 12 articles posted
+2026-07-26 18:01:45  composing 0013 (claude-real-video)
+2026-07-26 18:01:59    DRYRUN: 0013 composed (not posted)
+2026-07-26 18:01:59  run complete: posted 0 this run, 12 remaining
+2026-07-26 18:21:44  composing 0013 (claude-real-video)
+2026-07-26 18:22:02    POSTED 0013 (https://dev.to/renolu/claude-real-video-feeding-an-llm-the-frames-that-actually-matter-ge)
+2026-07-26 18:22:06  run complete: posted 1 this run, 11 remaining

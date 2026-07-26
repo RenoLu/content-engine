@@ -1,83 +1,155 @@
-﻿[
-    {
-        "prefix":  "0001",
-        "title":  "Ponytail",
-        "url":  "https://dev.to/renolu/ponytail-teaches-your-ai-agent-to-write-less-code-on-purpose-4eid",
-        "text":  "Most AI coding tools race to write more code. Ponytail does the opposite: it teaches an agent to write less, on purpose, by making it justify every file it touches. We wrote up why that restraint is the interesting part."
-    },
-    {
-        "prefix":  "0002",
-        "title":  "Odysseus",
-        "url":  "https://dev.to/renolu/odysseus-is-a-self-hosted-ai-workspace-that-wants-to-be-your-whole-desk-3gfp",
-        "text":  "Odysseus is a self-hosted AI workspace that wants to be your whole desk, not another chat window. The bet is that keeping your notes, tasks, and agent in one place you control beats stitching together five SaaS tools. Our read on where that holds up.",
-        "text_personal":  "Most self-hosted AI projects give you a chat window and call it a workspace. Odysseus goes the other way, and looking at it moved where I think the hard problem sits.\n\nIt bundles chat, agents, deep research, a document editor, an IMAP/SMTP email client, notes, tasks, and a calendar into one application on your own hardware. Not a better chatbot. The parts of your workday an assistant would actually touch, in one place you control.\n\nIt installs the way self-hosted tools should. Clone, copy .env.example, one docker compose up, and the workspace is on localhost:7000 with the first admin password printed in the container logs.\n\nTwo pieces stood out. The Cookbook gives hardware-aware model recommendations and handles downloads and serving, which matters if you run local models and would rather not guess what fits your GPU. Compare runs blind side-by-side model tests and synthesizes the results.\n\nThe part worth sitting with: agents get tools, MCP, files, memory, and shell access, and the email client is a real inbox with triage and reply drafts. So an agent that can read your mail can also run a shell. The README says it plainly. Keep auth on, keep private data out of Git, do not expose raw model or service ports publicly. That is the right warning to ship.\n\nCaveats are real. It is AGPL-3.0-or-later, worth reading closely if you plan to host it for anyone but yourself. The default branch is dev and gets the newest changes first, with a more curated main for fewer surprises. That tells you the maturity level.\n\nRun it on a non-critical box first. Breadth like this is something to grow into, not switch to overnight."
-    },
-    {
-        "prefix":  "0003",
-        "title":  "Omnigent",
-        "url":  "https://dev.to/renolu/omnigent-is-a-harness-for-your-harnesses-one-layer-over-claude-code-codex-and-the-rest-16d7",
-        "text":  "If you already run Claude Code, Codex, and a couple of other agents, Omnigent is a harness that sits over all of them so you drive one layer instead of switching context. We looked at what that consolidation buys you and what it costs."
-    },
-    {
-        "prefix":  "0004",
-        "title":  "Vercel eve",
-        "url":  "https://dev.to/renolu/with-vercels-eve-your-ai-agent-is-a-directory-2bpd",
-        "text":  "Vercel\u0027s eve treats your AI agent as a directory of files you can read, diff, and version, not a black box. For teams that need to audit what an agent actually did, that structure matters more than it sounds. Full writeup.",
-        "text_personal":  "Most of the friction in running an agent isn\u0027t the model. It\u0027s everything around it: where the system prompt lives, which tools are wired up, what runs on a schedule.\n\nVercel\u0027s eve makes a bet that sounds almost too simple. An agent should be a folder.\n\nInstead of assembling the agent in code, eve puts its capabilities in conventional files. An agent lives under an agent/ directory: instructions.md holds the always-on system prompt, tools/ holds typed functions the model can call, skills/ holds procedures loaded on demand, channels/ connects surfaces like HTTP, Slack, or Discord, and schedules/ holds recurring cron jobs. A new engineer reads the behavior by reading the folder, not by tracing a framework.\n\nSetup is one command. npx eve@latest init my-agent scaffolds the directory, installs dependencies, initializes Git, and drops you into a terminal UI. A minimal agent really is minimal: write instructions.md, define a tool with defineTool and a Zod input schema, pick a model in agent.ts with defineAgent.\n\nThe detail I keep thinking about: the eve npm package ships its full documentation inside node_modules/eve/docs, so a coding agent working in your repo can read eve\u0027s own docs locally. That\u0027s a framework built on the assumption that another agent will be editing its projects.\n\nCaveats are the beta kind, and eve states them. It\u0027s under Vercel\u0027s public beta terms, and APIs, docs, and behavior may change before general availability, so it\u0027s for prototyping rather than anchoring production. The typed-tool and Zod approach also assumes TypeScript, not Python.\n\nIf your last agent turned into something you\u0027d hate to hand off, scaffold one and look at how little is hidden."
-    },
-    {
-        "prefix":  "0005",
-        "title":  "MiMoCode",
-        "url":  "https://dev.to/renolu/mimocodes-bet-is-memory-not-the-model-12nd",
-        "text":  "MiMoCode\u0027s argument is that the bottleneck in coding agents is memory, not the model. It builds the whole tool around persistent context instead of chasing a bigger context window. We unpack whether the bet holds.",
-        "text_personal":  "Every terminal coding agent I use forgets the project the moment the session ends. MiMoCode, Xiaomi\u0027s terminal agent, is the first one I\u0027ve looked at that treats that as the actual problem.\n\nIt\u0027s a fork of OpenCode, so the TUI, multi-provider support, LSP and MCP come along. The new part is memory, and it\u0027s specific. Project knowledge sits in a MEMORY.md, structured session state in a checkpoint.md maintained by a dedicated checkpoint-writer subagent, per-task logs under tasks/\u003cid\u003e/progress.md. All of it indexed with SQLite FTS5 and injected automatically when you resume.\n\nThe context handling is the part I\u0027d steal. It decides when to checkpoint based on the model\u0027s context window, and when the window fills it rebuilds from the latest checkpoint, project memory, task progress and recent messages instead of truncating. A token budget with importance ranking decides how much gets back in. If you\u0027ve watched a long agent run quietly get worse as it fills up, that\u0027s the right target.\n\nOne more I liked: /goal sets a stop condition, and when the agent tries to stop, a separate judge model checks whether it actually met it. That goes right at agents quitting early and calling it done.\n\nCaveats. The source is MIT but there\u0027s also a separate use-restrictions file, plus Xiaomi\u0027s terms for the hosted services, so read both before building on it commercially. Tracking OpenCode means inheriting that project\u0027s churn. And the zero-config MiMo Auto channel is free for now and explicitly time-limited, so budget for a real provider.\n\nIf your complaint about your agent is that it forgets, give this one a real project for a session or two. The bet here is on the scaffolding, not the model."
-    },
-    {
-        "prefix":  "0006",
-        "title":  "OpenScience",
-        "url":  "https://dev.to/renolu/openscience-runs-the-whole-research-loop-not-just-the-reading-3kp",
-        "text":  "OpenScience runs the full research loop, not just the reading step: it forms questions, runs experiments, and checks results. It is an early look at what end-to-end research automation actually requires. Our notes.",
-        "text_personal":  "Most \"AI for research\" tools stop at helping you read the paper. The part that actually eats the week is running the thing.\n\nThat\u0027s why OpenScience caught my attention. You hand it a goal and it works through literature review, hypothesis, code, experiment, analysis, and write-up in one session. It\u0027s a local server with a browser workspace, not a chat window.\n\nThe details that make it more than a slogan:\n\nScientific databases are first-class tools the agent calls directly. UniProt, PDB, Ensembl, ChEMBL, PubChem, arXiv, OpenAlex, Semantic Scholar, and around thirty more. The project counts 290+ skills covering model training (DeepSpeed, PEFT, TRL), evaluation, cheminformatics, LaTeX and figures, and cloud compute through providers like Modal.\n\nThere\u0027s a default research agent backed by biology, physics, and ml specialists, plus critique and literature-review sub-agents, and a read-only plan mode so you can see the approach before anything runs.\n\nModel-agnostic and bring-your-own-key, routed per request, no account required. Install is npm install -g @synsci/openscience. Bun and TypeScript, Apache-2.0.\n\nThe caveat is one the README states itself: the agent is not sandboxed. The permission system keeps you aware of what it\u0027s doing but is not an isolation boundary. It does strip provider credentials out of subprocess environments and redact them from output, which is more care than most projects take. Still, this is an agent that writes code, opens a terminal, and runs experiments on your machine.\n\nI respect that they wrote that down instead of burying it. Run it in a container, and give it a question you already know the answer to first."
-    },
-    {
-        "prefix":  "0007",
-        "title":  "Dao Code",
-        "url":  "https://dev.to/renolu/dao-code-turns-deepseeks-cache-pricing-into-an-agent-architecture-5ffg",
-        "text":  "Dao Code turns DeepSeek\u0027s cache pricing into an architecture decision, structuring the agent so repeated context stays cheap. It is a clear case of cost shaping design rather than the other way around. Writeup.",
-        "text_personal":  "Most coding agents buy quality by buying a better model. Dao Code takes the opposite bet: make a cheap model good by treating the prefix cache as the thing you design around.\n\nThe number it hangs on: DeepSeek\u0027s prefix-cache hit price is roughly 1/120 of a miss. Once that ratio holds, you can afford habits that are normally too expensive to run.\n\nSo instead of bolting memory and self-review on top of the model, Dao Code keeps the system prefix, tool table, and memory byte-stable so the cache keeps hitting, then runs the heavier machinery on forks that reuse that same main prefix cache.\n\nThe reflection layer is three of those forks: a Challenger that questions the premise on a failure streak, a Refocuser that restates the original goal every N turns to fight scope creep, and a Reply-challenger that fires when you raise the same problem again.\n\nThey published receipts. Seven SWE-bench-style tasks on real repos (valibot, date-fns, es-toolkit, sqlglot, hono), 3.89M input tokens, 95.8% aggregate cache hit rate, 85.4% to 97.7% per task. A full read, edit, test, self-review cycle averaged Â¥0.15. Test files were hidden from the agent to block reward hacking, and every figure traces back to a per-run agent.log you can replay with /cost.\n\nCaveats. It was created in June 2026 with a small contributor base, the benchmark is seven to fourteen tasks rather than hundreds, and whether the cost multiples against other vendors hold on your workload is a separate question. It\u0027s also Chinese-first by design, aimed at users in mainland China where DeepSeek is register-and-go.\n\nThe idea generalizes past this repo: build the agent so its expensive habits live in the cheap part of the bill."
-    },
-    {
-        "prefix":  "0008",
-        "title":  "TickFlow",
-        "url":  "https://dev.to/renolu/the-a-share-quant-tool-that-refuses-to-pick-stocks-44pc",
-        "text":  "A quant tool that refuses to pick stocks for you sounds backwards. This one surfaces the signals and hands you the call, which is a more honest posture than most. Why we think that restraint is a feature.",
-        "text_personal":  "Most tools that put an LLM next to market data end up promising a prediction. tickflow-stock-panel opens by refusing to.\n\nIt\u0027s a self-hosted screening, monitoring, and backtesting workbench for China\u0027s A-share market, and the README says up front what it will not do: no AI stock picking, no limit-up prediction. I have no view on that market, but the refusal is what made me keep reading, because it actually shapes the code.\n\nThe LLM only appears in bounded places. It drafts screening strategies from a prompt, migrates hand-written code into the strategy format, produces a four-dimension read on a single stock covering technicals, fundamentals, financials and news, and writes a scheduled after-hours review you can push to Feishu or download as Markdown. It describes and drafts, it never tells you what to buy. Leave AI_API_KEY blank and the AI features switch off entirely. When enabled, it talks to any OpenAI-compatible endpoint, so a local Ollama model works fine.\n\nThe design decision I liked most is that pandas is quarantined. Screening runs on Polars over Parquet with DuckDB for queries, and the README calls vectorbt \"the entire project\u0027s only pandas boundary.\" Backtesting needs vectorbt, vectorbt needs pandas, so pandas lives in that one module and nowhere else in the project.\n\nHonest caveats: the millisecond scan claim has no benchmark behind it. Stock analysis and the review module are labeled Beta, and the v2 roadmap phase is still in progress. Deploy is a single Docker container, so it\u0027s cheap to try and throw away.\n\nThe part worth stealing has nothing to do with markets. Pick the one module your heavy dependency is allowed to live in, and write it down."
-    },
-    {
-        "prefix":  "0009",
-        "title":  "Loop Engineering",
-        "url":  "https://dev.to/renolu/loop-engineering-score-the-system-that-prompts-your-agents-emd",
-        "text":  "The premise of Loop Engineering is blunt: the person writing prompts is now the bottleneck, so design the loop that prompts the agent instead. It ships CLIs that score how loop-ready your setup is. Our breakdown."
-    },
-    {
-        "prefix":  "0010",
-        "title":  "TestSprite CLI",
-        "url":  "https://dev.to/renolu/testsprites-cli-hands-your-coding-agent-one-clean-failure-at-a-time-766",
-        "text":  "TestSprite\u0027s CLI hands your coding agent one clean failure at a time instead of a wall of red. That single change makes agent-driven test fixing far more reliable. Here is why it works.",
-        "text_personal":  "Most of my agent failures aren\u0027t the model writing bad code. They\u0027re the model getting a muddled picture of what broke.\n\nThat\u0027s why testsprite-cli stuck with me. Its most interesting design choice is a refusal. When an agent runs testsprite test failure get, it returns exactly one bundle tied to a single snapshotId, and it will not stitch data from two different runs together. The README has a name for the thing it\u0027s avoiding: \"frankenstein context.\" Anyone who has watched an agent fix a bug from run 3 using a stack trace from run 1 knows what that means.\n\nThe workflow is built for an agent to drive, not a human to read. Three commands: test create describes a behavior, runs it, and exits 1 when it fails. test failure get pulls the failing step, screenshots, DOM snapshots, the test source, a root-cause hypothesis, and a recommended fix target. test rerun replays after the edit and exits 0 on pass. Stable exit codes and a fixed --output json contract, the boring part that makes it automatable. There\u0027s also a --dry-run that exercises the full code path offline with canned data, so you can learn the commands without spending API calls.\n\nCaveats worth knowing. It\u0027s Apache-2.0, but it\u0027s a client for a paid cloud platform, so the CLI alone does nothing without an API key, and your app has to be reachable from their cloud. The README is thin on pricing, self-hosting, and what the failure bundle looks like on disk. It also leads with a leaderboard claim about a cheap model shipping the most correct app at 89%, which is the authors\u0027 framing, not an independent result.\n\nThe bet underneath it is one I agree with: verification, not model size, is where the loop is currently breaking."
-    },
-    {
-        "prefix":  "0011",
-        "title":  "loopy",
-        "url":  "https://dev.to/renolu/loopy-packaging-agent-work-as-bounded-checkable-loops-instead-of-one-shot-prompts-aa",
-        "text":  "loopy packages agent work as bounded, checkable loops instead of one big one-shot prompt. Each unit has a clear start, end, and pass condition, which is what makes the output trustworthy. Full writeup.",
-        "text_personal":  "The hard part of handing work to an agent isn\u0027t the instruction. It\u0027s the stopping rule.\n\nForward-Future/loopy is built around that. The unit it packages isn\u0027t a prompt, it\u0027s a loop: a short playbook with a built-in check, a next step, and an explicit rule for when to quit. The README is blunt that loops \"are not permission for an agent to run forever.\"\n\nIt makes the case with one comparison. One-shot: \"Make this website faster.\" Loop: find the slowest page, make one focused improvement, measure again, keep the change only if it helps, repeat until every page meets the target or another pass stops helping. Same goal, but the second version tells the agent how to judge its own result and when to hand control back.\n\nIt\u0027s two things, and only one you install. The Loop Library is a public catalog you can browse and copy prompts from, no install. Loopy is the optional skill that discovers, audits, adapts, runs and publishes loops, nine named paths. For agents without the skill, the catalog also ships llms.txt plus JSON and plain-text versions.\n\nTwo details I liked. Discovery won\u0027t call work repeated until it sees at least two distinct thread occurrences; a code pattern with no run history is labeled a potential loop, not proven recurrence. And LOOPS.md is treated as untrusted data, so a saved prompt doesn\u0027t by itself grant permission to run code or deploy.\n\nThe gap: no benchmark anywhere in it. Nothing showing these loops converge faster than open-ended prompting. The case is structural, and still just a case.\n\nInstall is one npx command, MIT, with flags for Codex, Cursor and Claude Code. Even if you never install it, the four questions a loop has to answer are worth stealing."
-    },
-    {
-        "prefix":  "0012",
-        "title":  "DevSpace",
-        "url":  "https://dev.to/renolu/devspace-a-coding-agent-that-keeps-your-code-on-your-own-machine-1045",
-        "text":  "DevSpace is a coding agent that keeps your code on your own machine, not on someone\u0027s server. For teams with real IP or compliance constraints, that boundary is the whole decision. Our read.",
-        "text_personal":  "Every AI coding assistant asks for the same trade: your source goes to a vendor\u0027s cloud so the model can see it. Plenty of teams I know cannot make that trade.\n\nDevSpace (Waishnav/devspace) inverts it. Instead of uploading files, it hands ChatGPT a connection back to your own machine, and the model reads, edits, searches, and runs code in your real local projects.\n\nThe mechanism is a self-hosted MCP server. You run devspace init and devspace serve, then expose the local port (usually 7676) through a tunnel you control: Cloudflare Tunnel, ngrok, Pinggy, and Tailscale Funnel are the options named. Your client connects to the public /mcp URL, gated by an Owner password that devspace init prints and stores at ~/.devspace/auth.json.\n\nTwo details I liked. You choose which roots are allowed at setup, so the model sees the folders you named and not your whole disk. And it supports isolated Git worktrees, so parallel sessions do not step on each other. It also picks up AGENTS.md and CLAUDE.md as project instructions.\n\nThe README is unusually honest about what this is. Under a \"Mental Model\" heading it says outright that a connected client has broad local capabilities inside an opened workspace, shell execution included, and that you should treat it like a trusted coding partner with access to your machine. That is the real cost: the security burden moves onto you and your tunnel config.\n\nCaveats. Node 22.19 or higher and below 27. On Windows you need a Bash-compatible shell, so Git Bash or WSL; plain PowerShell and cmd.exe are not supported yet. The note about OpenAI\u0027s terms is the author\u0027s reading, not legal cover.\n\nScope the roots narrowly before you point anything at it."
-    }
+[
+  {
+    "prefix": "0001",
+    "title": "Ponytail",
+    "url": "https://dev.to/renolu/ponytail-teaches-your-ai-agent-to-write-less-code-on-purpose-4eid",
+    "text": "Most AI coding tools race to write more code. Ponytail does the opposite: it teaches an agent to write less, on purpose, by making it justify every file it touches. We wrote up why that restraint is the interesting part."
+  },
+  {
+    "prefix": "0002",
+    "title": "Odysseus",
+    "url": "https://dev.to/renolu/odysseus-is-a-self-hosted-ai-workspace-that-wants-to-be-your-whole-desk-3gfp",
+    "text": "Odysseus is a self-hosted AI workspace that wants to be your whole desk, not another chat window. The bet is that keeping your notes, tasks, and agent in one place you control beats stitching together five SaaS tools. Our read on where that holds up.",
+    "text_personal": "Most self-hosted AI projects give you a chat window and call it a workspace. Odysseus goes the other way, and looking at it moved where I think the hard problem sits.\n\nIt bundles chat, agents, deep research, a document editor, an IMAP/SMTP email client, notes, tasks, and a calendar into one application on your own hardware. Not a better chatbot. The parts of your workday an assistant would actually touch, in one place you control.\n\nIt installs the way self-hosted tools should. Clone, copy .env.example, one docker compose up, and the workspace is on localhost:7000 with the first admin password printed in the container logs.\n\nTwo pieces stood out. The Cookbook gives hardware-aware model recommendations and handles downloads and serving, which matters if you run local models and would rather not guess what fits your GPU. Compare runs blind side-by-side model tests and synthesizes the results.\n\nThe part worth sitting with: agents get tools, MCP, files, memory, and shell access, and the email client is a real inbox with triage and reply drafts. So an agent that can read your mail can also run a shell. The README says it plainly. Keep auth on, keep private data out of Git, do not expose raw model or service ports publicly. That is the right warning to ship.\n\nCaveats are real. It is AGPL-3.0-or-later, worth reading closely if you plan to host it for anyone but yourself. The default branch is dev and gets the newest changes first, with a more curated main for fewer surprises. That tells you the maturity level.\n\nRun it on a non-critical box first. Breadth like this is something to grow into, not switch to overnight."
+  },
+  {
+    "prefix": "0003",
+    "title": "Omnigent",
+    "url": "https://dev.to/renolu/omnigent-is-a-harness-for-your-harnesses-one-layer-over-claude-code-codex-and-the-rest-16d7",
+    "text": "If you already run Claude Code, Codex, and a couple of other agents, Omnigent is a harness that sits over all of them so you drive one layer instead of switching context. We looked at what that consolidation buys you and what it costs."
+  },
+  {
+    "prefix": "0004",
+    "title": "Vercel eve",
+    "url": "https://dev.to/renolu/with-vercels-eve-your-ai-agent-is-a-directory-2bpd",
+    "text": "Vercel's eve treats your AI agent as a directory of files you can read, diff, and version, not a black box. For teams that need to audit what an agent actually did, that structure matters more than it sounds. Full writeup.",
+    "text_personal": "Most of the friction in running an agent isn't the model. It's everything around it: where the system prompt lives, which tools are wired up, what runs on a schedule.\n\nVercel's eve makes a bet that sounds almost too simple. An agent should be a folder.\n\nInstead of assembling the agent in code, eve puts its capabilities in conventional files. An agent lives under an agent/ directory: instructions.md holds the always-on system prompt, tools/ holds typed functions the model can call, skills/ holds procedures loaded on demand, channels/ connects surfaces like HTTP, Slack, or Discord, and schedules/ holds recurring cron jobs. A new engineer reads the behavior by reading the folder, not by tracing a framework.\n\nSetup is one command. npx eve@latest init my-agent scaffolds the directory, installs dependencies, initializes Git, and drops you into a terminal UI. A minimal agent really is minimal: write instructions.md, define a tool with defineTool and a Zod input schema, pick a model in agent.ts with defineAgent.\n\nThe detail I keep thinking about: the eve npm package ships its full documentation inside node_modules/eve/docs, so a coding agent working in your repo can read eve's own docs locally. That's a framework built on the assumption that another agent will be editing its projects.\n\nCaveats are the beta kind, and eve states them. It's under Vercel's public beta terms, and APIs, docs, and behavior may change before general availability, so it's for prototyping rather than anchoring production. The typed-tool and Zod approach also assumes TypeScript, not Python.\n\nIf your last agent turned into something you'd hate to hand off, scaffold one and look at how little is hidden."
+  },
+  {
+    "prefix": "0005",
+    "title": "MiMoCode",
+    "url": "https://dev.to/renolu/mimocodes-bet-is-memory-not-the-model-12nd",
+    "text": "MiMoCode's argument is that the bottleneck in coding agents is memory, not the model. It builds the whole tool around persistent context instead of chasing a bigger context window. We unpack whether the bet holds.",
+    "text_personal": "Every terminal coding agent I use forgets the project the moment the session ends. MiMoCode, Xiaomi's terminal agent, is the first one I've looked at that treats that as the actual problem.\n\nIt's a fork of OpenCode, so the TUI, multi-provider support, LSP and MCP come along. The new part is memory, and it's specific. Project knowledge sits in a MEMORY.md, structured session state in a checkpoint.md maintained by a dedicated checkpoint-writer subagent, per-task logs under tasks/<id>/progress.md. All of it indexed with SQLite FTS5 and injected automatically when you resume.\n\nThe context handling is the part I'd steal. It decides when to checkpoint based on the model's context window, and when the window fills it rebuilds from the latest checkpoint, project memory, task progress and recent messages instead of truncating. A token budget with importance ranking decides how much gets back in. If you've watched a long agent run quietly get worse as it fills up, that's the right target.\n\nOne more I liked: /goal sets a stop condition, and when the agent tries to stop, a separate judge model checks whether it actually met it. That goes right at agents quitting early and calling it done.\n\nCaveats. The source is MIT but there's also a separate use-restrictions file, plus Xiaomi's terms for the hosted services, so read both before building on it commercially. Tracking OpenCode means inheriting that project's churn. And the zero-config MiMo Auto channel is free for now and explicitly time-limited, so budget for a real provider.\n\nIf your complaint about your agent is that it forgets, give this one a real project for a session or two. The bet here is on the scaffolding, not the model."
+  },
+  {
+    "prefix": "0006",
+    "title": "OpenScience",
+    "url": "https://dev.to/renolu/openscience-runs-the-whole-research-loop-not-just-the-reading-3kp",
+    "text": "OpenScience runs the full research loop, not just the reading step: it forms questions, runs experiments, and checks results. It is an early look at what end-to-end research automation actually requires. Our notes.",
+    "text_personal": "Most \"AI for research\" tools stop at helping you read the paper. The part that actually eats the week is running the thing.\n\nThat's why OpenScience caught my attention. You hand it a goal and it works through literature review, hypothesis, code, experiment, analysis, and write-up in one session. It's a local server with a browser workspace, not a chat window.\n\nThe details that make it more than a slogan:\n\nScientific databases are first-class tools the agent calls directly. UniProt, PDB, Ensembl, ChEMBL, PubChem, arXiv, OpenAlex, Semantic Scholar, and around thirty more. The project counts 290+ skills covering model training (DeepSpeed, PEFT, TRL), evaluation, cheminformatics, LaTeX and figures, and cloud compute through providers like Modal.\n\nThere's a default research agent backed by biology, physics, and ml specialists, plus critique and literature-review sub-agents, and a read-only plan mode so you can see the approach before anything runs.\n\nModel-agnostic and bring-your-own-key, routed per request, no account required. Install is npm install -g @synsci/openscience. Bun and TypeScript, Apache-2.0.\n\nThe caveat is one the README states itself: the agent is not sandboxed. The permission system keeps you aware of what it's doing but is not an isolation boundary. It does strip provider credentials out of subprocess environments and redact them from output, which is more care than most projects take. Still, this is an agent that writes code, opens a terminal, and runs experiments on your machine.\n\nI respect that they wrote that down instead of burying it. Run it in a container, and give it a question you already know the answer to first."
+  },
+  {
+    "prefix": "0007",
+    "title": "Dao Code",
+    "url": "https://dev.to/renolu/dao-code-turns-deepseeks-cache-pricing-into-an-agent-architecture-5ffg",
+    "text": "Dao Code turns DeepSeek's cache pricing into an architecture decision, structuring the agent so repeated context stays cheap. It is a clear case of cost shaping design rather than the other way around. Writeup.",
+    "text_personal": "Most coding agents buy quality by buying a better model. Dao Code takes the opposite bet: make a cheap model good by treating the prefix cache as the thing you design around.\n\nThe number it hangs on: DeepSeek's prefix-cache hit price is roughly 1/120 of a miss. Once that ratio holds, you can afford habits that are normally too expensive to run.\n\nSo instead of bolting memory and self-review on top of the model, Dao Code keeps the system prefix, tool table, and memory byte-stable so the cache keeps hitting, then runs the heavier machinery on forks that reuse that same main prefix cache.\n\nThe reflection layer is three of those forks: a Challenger that questions the premise on a failure streak, a Refocuser that restates the original goal every N turns to fight scope creep, and a Reply-challenger that fires when you raise the same problem again.\n\nThey published receipts. Seven SWE-bench-style tasks on real repos (valibot, date-fns, es-toolkit, sqlglot, hono), 3.89M input tokens, 95.8% aggregate cache hit rate, 85.4% to 97.7% per task. A full read, edit, test, self-review cycle averaged Â¥0.15. Test files were hidden from the agent to block reward hacking, and every figure traces back to a per-run agent.log you can replay with /cost.\n\nCaveats. It was created in June 2026 with a small contributor base, the benchmark is seven to fourteen tasks rather than hundreds, and whether the cost multiples against other vendors hold on your workload is a separate question. It's also Chinese-first by design, aimed at users in mainland China where DeepSeek is register-and-go.\n\nThe idea generalizes past this repo: build the agent so its expensive habits live in the cheap part of the bill."
+  },
+  {
+    "prefix": "0008",
+    "title": "TickFlow",
+    "url": "https://dev.to/renolu/the-a-share-quant-tool-that-refuses-to-pick-stocks-44pc",
+    "text": "A quant tool that refuses to pick stocks for you sounds backwards. This one surfaces the signals and hands you the call, which is a more honest posture than most. Why we think that restraint is a feature.",
+    "text_personal": "Most tools that put an LLM next to market data end up promising a prediction. tickflow-stock-panel opens by refusing to.\n\nIt's a self-hosted screening, monitoring, and backtesting workbench for China's A-share market, and the README says up front what it will not do: no AI stock picking, no limit-up prediction. I have no view on that market, but the refusal is what made me keep reading, because it actually shapes the code.\n\nThe LLM only appears in bounded places. It drafts screening strategies from a prompt, migrates hand-written code into the strategy format, produces a four-dimension read on a single stock covering technicals, fundamentals, financials and news, and writes a scheduled after-hours review you can push to Feishu or download as Markdown. It describes and drafts, it never tells you what to buy. Leave AI_API_KEY blank and the AI features switch off entirely. When enabled, it talks to any OpenAI-compatible endpoint, so a local Ollama model works fine.\n\nThe design decision I liked most is that pandas is quarantined. Screening runs on Polars over Parquet with DuckDB for queries, and the README calls vectorbt \"the entire project's only pandas boundary.\" Backtesting needs vectorbt, vectorbt needs pandas, so pandas lives in that one module and nowhere else in the project.\n\nHonest caveats: the millisecond scan claim has no benchmark behind it. Stock analysis and the review module are labeled Beta, and the v2 roadmap phase is still in progress. Deploy is a single Docker container, so it's cheap to try and throw away.\n\nThe part worth stealing has nothing to do with markets. Pick the one module your heavy dependency is allowed to live in, and write it down."
+  },
+  {
+    "prefix": "0009",
+    "title": "Loop Engineering",
+    "url": "https://dev.to/renolu/loop-engineering-score-the-system-that-prompts-your-agents-emd",
+    "text": "The premise of Loop Engineering is blunt: the person writing prompts is now the bottleneck, so design the loop that prompts the agent instead. It ships CLIs that score how loop-ready your setup is. Our breakdown."
+  },
+  {
+    "prefix": "0010",
+    "title": "TestSprite CLI",
+    "url": "https://dev.to/renolu/testsprites-cli-hands-your-coding-agent-one-clean-failure-at-a-time-766",
+    "text": "TestSprite's CLI hands your coding agent one clean failure at a time instead of a wall of red. That single change makes agent-driven test fixing far more reliable. Here is why it works.",
+    "text_personal": "Most of my agent failures aren't the model writing bad code. They're the model getting a muddled picture of what broke.\n\nThat's why testsprite-cli stuck with me. Its most interesting design choice is a refusal. When an agent runs testsprite test failure get, it returns exactly one bundle tied to a single snapshotId, and it will not stitch data from two different runs together. The README has a name for the thing it's avoiding: \"frankenstein context.\" Anyone who has watched an agent fix a bug from run 3 using a stack trace from run 1 knows what that means.\n\nThe workflow is built for an agent to drive, not a human to read. Three commands: test create describes a behavior, runs it, and exits 1 when it fails. test failure get pulls the failing step, screenshots, DOM snapshots, the test source, a root-cause hypothesis, and a recommended fix target. test rerun replays after the edit and exits 0 on pass. Stable exit codes and a fixed --output json contract, the boring part that makes it automatable. There's also a --dry-run that exercises the full code path offline with canned data, so you can learn the commands without spending API calls.\n\nCaveats worth knowing. It's Apache-2.0, but it's a client for a paid cloud platform, so the CLI alone does nothing without an API key, and your app has to be reachable from their cloud. The README is thin on pricing, self-hosting, and what the failure bundle looks like on disk. It also leads with a leaderboard claim about a cheap model shipping the most correct app at 89%, which is the authors' framing, not an independent result.\n\nThe bet underneath it is one I agree with: verification, not model size, is where the loop is currently breaking."
+  },
+  {
+    "prefix": "0011",
+    "title": "loopy",
+    "url": "https://dev.to/renolu/loopy-packaging-agent-work-as-bounded-checkable-loops-instead-of-one-shot-prompts-aa",
+    "text": "loopy packages agent work as bounded, checkable loops instead of one big one-shot prompt. Each unit has a clear start, end, and pass condition, which is what makes the output trustworthy. Full writeup.",
+    "text_personal": "The hard part of handing work to an agent isn't the instruction. It's the stopping rule.\n\nForward-Future/loopy is built around that. The unit it packages isn't a prompt, it's a loop: a short playbook with a built-in check, a next step, and an explicit rule for when to quit. The README is blunt that loops \"are not permission for an agent to run forever.\"\n\nIt makes the case with one comparison. One-shot: \"Make this website faster.\" Loop: find the slowest page, make one focused improvement, measure again, keep the change only if it helps, repeat until every page meets the target or another pass stops helping. Same goal, but the second version tells the agent how to judge its own result and when to hand control back.\n\nIt's two things, and only one you install. The Loop Library is a public catalog you can browse and copy prompts from, no install. Loopy is the optional skill that discovers, audits, adapts, runs and publishes loops, nine named paths. For agents without the skill, the catalog also ships llms.txt plus JSON and plain-text versions.\n\nTwo details I liked. Discovery won't call work repeated until it sees at least two distinct thread occurrences; a code pattern with no run history is labeled a potential loop, not proven recurrence. And LOOPS.md is treated as untrusted data, so a saved prompt doesn't by itself grant permission to run code or deploy.\n\nThe gap: no benchmark anywhere in it. Nothing showing these loops converge faster than open-ended prompting. The case is structural, and still just a case.\n\nInstall is one npx command, MIT, with flags for Codex, Cursor and Claude Code. Even if you never install it, the four questions a loop has to answer are worth stealing."
+  },
+  {
+    "prefix": "0012",
+    "title": "DevSpace",
+    "url": "https://dev.to/renolu/devspace-a-coding-agent-that-keeps-your-code-on-your-own-machine-1045",
+    "text": "DevSpace is a coding agent that keeps your code on your own machine, not on someone's server. For teams with real IP or compliance constraints, that boundary is the whole decision. Our read.",
+    "text_personal": "Every AI coding assistant asks for the same trade: your source goes to a vendor's cloud so the model can see it. Plenty of teams I know cannot make that trade.\n\nDevSpace (Waishnav/devspace) inverts it. Instead of uploading files, it hands ChatGPT a connection back to your own machine, and the model reads, edits, searches, and runs code in your real local projects.\n\nThe mechanism is a self-hosted MCP server. You run devspace init and devspace serve, then expose the local port (usually 7676) through a tunnel you control: Cloudflare Tunnel, ngrok, Pinggy, and Tailscale Funnel are the options named. Your client connects to the public /mcp URL, gated by an Owner password that devspace init prints and stores at ~/.devspace/auth.json.\n\nTwo details I liked. You choose which roots are allowed at setup, so the model sees the folders you named and not your whole disk. And it supports isolated Git worktrees, so parallel sessions do not step on each other. It also picks up AGENTS.md and CLAUDE.md as project instructions.\n\nThe README is unusually honest about what this is. Under a \"Mental Model\" heading it says outright that a connected client has broad local capabilities inside an opened workspace, shell execution included, and that you should treat it like a trusted coding partner with access to your machine. That is the real cost: the security burden moves onto you and your tunnel config.\n\nCaveats. Node 22.19 or higher and below 27. On Windows you need a Bash-compatible shell, so Git Bash or WSL; plain PowerShell and cmd.exe are not supported yet. The note about OpenAI's terms is the author's reading, not legal cover.\n\nScope the roots narrowly before you point anything at it."
+  },
+  {
+    "prefix": "0013",
+    "title": "claude-real-video",
+    "url": "https://dev.to/renolu/claude-real-video-feeding-an-llm-the-frames-that-actually-matter-ge",
+    "text": "Most video AI demos hand the model every frame and hope. claude-real-video picks the scene-change keyframes, drops near-identical shots, and transcribes the audio into a folder any LLM can read. Our read on why the filtering is the product."
+  },
+  {
+    "prefix": "0014",
+    "title": "Agent Apprenticeship",
+    "url": "https://dev.to/renolu/agent-apprenticeship-turns-finished-agent-tasks-into-reusable-experience-1pl",
+    "text": "Agent Apprenticeship treats finished agent work as portable experience you can install into later runs, instead of throwing the transcript away. The seed dataset and the value-per-task claims are worth checking before you buy the premise. Our read."
+  },
+  {
+    "prefix": "0015",
+    "title": "gzh-design-skill",
+    "url": "https://dev.to/renolu/gzh-design-skill-typesetting-for-wechat-by-constraint-not-by-prompt-3f7h",
+    "text": "gzh-design-skill turns finished Markdown into paste-ready WeChat HTML, and it enforces the platform's filtering rules with two Python validators rather than asking the model to remember them. Constraint beats prompting when the target platform is strict. Our read."
+  },
+  {
+    "prefix": "0016",
+    "title": "Apple coreai-models",
+    "url": "https://dev.to/renolu/apples-coreai-models-ships-agent-skills-next-to-its-on-device-model-recipes-4g4g",
+    "text": "Apple shipped agent skills for Claude Code, Codex, and Gemini next to its on-device model recipes, in a curated gallery that takes no pull requests. Worth reading for what the packaging says about where Apple expects agents to run. Our read."
+  },
+  {
+    "prefix": "0017",
+    "title": "CodexPro",
+    "url": "https://dev.to/renolu/codexpro-chatgpt-as-a-coding-agent-scoped-to-one-repo-1p4h",
+    "text": "CodexPro gives ChatGPT Developer Mode a defined tool set over a single repo through a local MCP server, with token-gated tunnels and guardrails on writes and bash. The scoping is the interesting part. Our read."
+  },
+  {
+    "prefix": "0018",
+    "title": "local-llm",
+    "url": "https://dev.to/renolu/local-llm-a-field-report-on-running-sota-models-on-your-own-hardware-5g2d",
+    "text": "James O'Beirne documented two home builds for running large models, a 2k dual-3090 rig and a 40k four-GPU machine, including the PCIe, BIOS, and kernel fixes that made them work. The most useful part is the list of what broke. Our read."
+  },
+  {
+    "prefix": "0019",
+    "title": "pixel2motion",
+    "url": "https://dev.to/renolu/pixel2motion-fits-the-vector-before-it-animates-the-logo-18b6",
+    "text": "pixel2motion animates a raster logo only after a QA-verified static vector passes as the final-frame contract. Getting the vector right first is what keeps the animation from wobbling. Our read."
+  },
+  {
+    "prefix": "0020",
+    "title": "DeepSeek-Reasonix",
+    "url": "https://dev.to/renolu/deepseek-reasonix-a-terminal-coding-agent-engineered-around-the-prefix-cache-3fbl",
+    "text": "DeepSeek-Reasonix is built around protecting DeepSeek's prompt prefix cache, with stable startup summaries and two separate model sessions so long runs stay cheap. Pricing shaped the architecture. Our read."
+  },
+  {
+    "prefix": "0021",
+    "title": "Open Design",
+    "url": "https://dev.to/renolu/open-design-makes-your-coding-agent-the-design-engine-and-exports-real-files-324b",
+    "text": "Open Design hands design work to the coding agent already on your laptop, then exports real HTML, PDF, PPTX, and MP4 files instead of a preview. Local-first, and the export list is the whole pitch. Our read."
+  },
+  {
+    "prefix": "0022",
+    "title": "Browser Harness",
+    "url": "https://dev.to/renolu/browser-harness-hands-the-llm-a-websocket-to-chrome-and-lets-it-write-the-rest-n6h",
+    "text": "Browser Harness keeps its core to about a thousand lines and connects the LLM straight to Chrome over CDP. When a helper is missing, the agent writes it mid-task and keeps it for next time. Our read."
+  },
+  {
+    "prefix": "0023",
+    "title": "OpenSquilla",
+    "url": "https://dev.to/renolu/opensquilla-routes-each-turn-to-the-cheapest-model-that-can-handle-it-3bk1",
+    "text": "OpenSquilla routes every turn to the cheapest model that can handle it across 20-plus providers, and it learns the routing from its own traffic. Cost control treated as a scheduling problem. Our read."
+  },
+  {
+    "prefix": "0024",
+    "title": "Terax",
+    "url": "https://dev.to/renolu/terax-packs-a-terminal-editor-git-graph-and-an-ai-agent-into-an-8-mb-binary-40ih",
+    "text": "Terax bundles a terminal, editor, git graph, web preview, and an agent panel into a roughly 8 MB binary that runs on your own API keys or local models, with no account and no telemetry. Our read."
+  }
 ]

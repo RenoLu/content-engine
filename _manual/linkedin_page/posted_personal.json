@@ -1,0 +1,92 @@
+{
+    "posted": [
+        "0001",
+        "0003",
+        "0009",
+        "0002",
+        "0004",
+        "0005",
+        "0006",
+        "0007",
+        "0008",
+        "0010",
+        "0011",
+        "0012",
+        "0013"
+    ],
+    "history": [
+        {
+            "prefix": "0001",
+            "at": "2026-07-18T20:00:00-04:00",
+            "note": "posted by hand by Yan; seeded from the profile activity feed (21h old on 2026-07-19)"
+        },
+        {
+            "prefix": "0003",
+            "at": "2026-07-12T12:00:00-04:00",
+            "note": "posted by hand by Yan; seeded from the profile activity feed (1w old on 2026-07-19)"
+        },
+        {
+            "prefix": "0009",
+            "at": "2026-07-13T12:00:00-04:00",
+            "note": "posted by hand by Yan; seeded from the profile activity feed (6d old on 2026-07-19)"
+        },
+        {
+            "prefix": "0002",
+            "at": "2026-07-19T20:44:34-04:00"
+        },
+        {
+            "prefix": "0004",
+            "at": "2026-07-19T22:22:01-04:00",
+            "kind": "article",
+            "title": "With Vercel's eve, your AI agent is a directory"
+        },
+        {
+            "prefix": "0005",
+            "at": "2026-07-20T17:04:12-04:00",
+            "kind": "article",
+            "title": "MiMoCode's bet is memory, not the model"
+        },
+        {
+            "prefix": "0006",
+            "at": "2026-07-21T17:02:43-04:00",
+            "kind": "article",
+            "title": "OpenScience runs the whole research loop, not just the reading"
+        },
+        {
+            "prefix": "0007",
+            "at": "2026-07-22T17:02:12-04:00",
+            "kind": "article",
+            "title": "Dao Code turns DeepSeek's cache pricing into an agent architecture"
+        },
+        {
+            "prefix": "0008",
+            "at": "2026-07-23T17:02:46-04:00",
+            "kind": "article",
+            "title": "The A-share quant tool that refuses to pick stocks"
+        },
+        {
+            "prefix": "0010",
+            "at": "2026-07-24T17:02:00-04:00",
+            "kind": "article",
+            "title": "TestSprite's CLI hands your coding agent one clean failure at a time"
+        },
+        {
+            "prefix": "0011",
+            "at": "2026-07-26T09:44:32-04:00",
+            "kind": "article",
+            "title": "loopy: packaging agent work as bounded, checkable loops instead of one-shot prompts"
+        },
+        {
+            "prefix": "0012",
+            "at": "2026-07-26T11:22:11-04:00",
+            "kind": "article",
+            "title": "DevSpace: a coding agent that keeps your code on your own machine"
+        },
+        {
+            "prefix": "0013",
+            "at": "2026-07-26T18:21:04-04:00",
+            "kind": "article",
+            "title": "claude-real-video: feeding an LLM the frames that actually matter"
+        }
+    ]
+}
