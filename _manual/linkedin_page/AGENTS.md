@@ -29,6 +29,13 @@ re-implement the browser/DOM logic yourself.
   and never fall back to posting manually. A missed day is fine; the next run continues.
 - Post at most 1 article per run.
 
+## The queue tops itself up before you run
+
+`codex_run.ps1` runs `company_top_up.py` ahead of your step. It appends a queue entry for
+every published article that has a dev.to URL and a blurb in `company_blurbs.json`, so the
+queue you read is already current. Write blurbs into `company_blurbs.json` for future
+articles; never hand-edit `queue.json`.
+
 ## The personal-profile lane is not yours to run
 
 `codex_run.ps1` runs it itself, right after your step, as `article_cdp.py --next --max 1`
@@ -42,6 +49,7 @@ on the debug Chrome (:9222). Do not invoke it, and do not touch `posted_personal
 - `post_log.txt`  : per-run log
 - `shots/`        : screenshots per run for auditing
 - `article_cdp.py`: personal-profile lane (formatted native Articles + cover image, over CDP)
+- `company_top_up.py`, `company_blurbs.json`, `devto_urls.json` : company-queue refill (blurb + dev.to URL pairing)
 - `post_cdp_log.txt`, `articles_map.json`, `posted_personal.json` : that lane's log, prefix→URL map, state
 - `post_personal.ps1` : the retired Kimi version of the personal lane; kept for its notes only
 

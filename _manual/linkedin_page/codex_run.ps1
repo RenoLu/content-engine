@@ -27,6 +27,17 @@ function Write-Log($msg) {
   Write-Host $msg
 }
 
+# Top up the company-page queue before anything posts. That queue pairs a hand-written
+# blurb with the article's dev.to URL, and the URL only exists after the daily publisher
+# puts the piece live, so this runs every day and appends whatever became postable. The
+# lane sat dry from 07-21 to 07-26 without it, because "queue empty" and "healthy" look
+# identical in the log.
+$Py = "C:\Coding Space\job-app\job_app_agent\.venv\Scripts\python.exe"
+if (Test-Path $Py) {
+  $topup = & $Py (Join-Path $Dir "company_top_up.py") 2>&1
+  foreach ($line in $topup) { Write-Log ("topup: {0}" -f $line) }
+}
+
 Write-Log ("`n==== {0} : codex exec start ====" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"))
 
 # --dangerously-bypass : unattended; no approval prompts (externally trusted machine)
@@ -95,8 +106,8 @@ if ($code -eq 0 -and $after -le $before) {
 # article editor's Style dropdown ignores those, so every article it published came out
 # as one flat wall of paragraphs with no headings and no cover image. Playwright-over-CDP
 # clicks are real, so headings, bullet lists, code blocks and the cover upload all work.
-# Python comes from the job-app venv, the only env here with Playwright installed.
-$Py = "C:\Coding Space\job-app\job_app_agent\.venv\Scripts\python.exe"
+# Python comes from the job-app venv, the only env here with Playwright installed ($Py
+# is set at the top of this script, where the queue top-up uses it too).
 Write-Log ("---- {0} : personal lane start ----" -f (Get-Date -Format "HH:mm:ss"))
 if (Test-Path $Py) {
   # --from-published: queue.json only ever held the first 12 pieces. Everything the

@@ -1,0 +1,64 @@
+{
+  "_comment": "Company-page commentary, written ahead of publication. company_top_up.py pairs each blurb with the article's dev.to URL once the daily publisher puts it live, then appends it to queue.json. Keyed by article prefix. Voice: 2-3 plain sentences, state the thing, say why it matters, close with a pointer to the writeup. No em-dashes, no marketing language.",
+
+  "0025": {
+    "title": "FreeLLMAPI",
+    "text": "FreeLLMAPI puts the free tiers of 18 providers behind one OpenAI-compatible endpoint, with per-key rate tracking and failover to keep requests under quota. Handy for prototypes, and a useful look at what happens when free tiers become infrastructure. Our read."
+  },
+  "0026": {
+    "title": "SkillOpt",
+    "text": "SkillOpt treats a single skill document as trainable state, editing it through validation-gated updates until a frozen model performs better. The winner ships as one compact file and costs nothing extra at inference time. Our read."
+  },
+  "0027": {
+    "title": "garden-skills",
+    "text": "garden-skills hard-codes taste into agent skills: a five-dial design read, 25 named style recipes, and workflows gated at checkpoints. Opinionated defaults beat asking a model to have opinions. Our read."
+  },
+  "0028": {
+    "title": "awesome-gpt-image-2",
+    "text": "A prompt library where every entry is a structured JSON blueprint with its author and source attached, rather than a wall of copyable text. The schema and the attribution are what make a collection this size maintainable. Our read."
+  },
+  "0029": {
+    "title": "text-to-cad",
+    "text": "text-to-cad turns a coding agent into a CAD engineer, carrying a plain-language request through STEP, DXF, slicing, and a deliberately cautious printer start. Eleven skills, and the caution at the end is the part worth studying. Our read."
+  },
+  "0030": {
+    "title": "academic-research-skills-codex",
+    "text": "This project repackages a Claude Code research suite so Codex runs the same five human-in-the-loop workflows, pinned to a specific upstream commit. A small lesson in porting skills without forking the intent. Our read."
+  },
+  "0031": {
+    "title": "HTML Anything",
+    "text": "HTML Anything ships no model and no API key. It detects the coding CLI you already logged into and drives that to turn notes into ship-ready single-file HTML. Our read on why the no-key pattern keeps showing up."
+  },
+  "0032": {
+    "title": "Kun",
+    "text": "Kun starts from a written requirement rather than a prompt, threading design, plans, code, and review into one workspace, and defaults to low-cost providers so the extra rounds stay affordable. Requirements-first only works if the model bill allows it. Our read."
+  },
+  "0033": {
+    "title": "PixelRAG",
+    "text": "PixelRAG skips text parsing and retrieves over page screenshots with a vision embedder, so tables, charts, and layout survive. In document-heavy retrieval, the parse step is usually where the meaning goes missing. Our read."
+  },
+  "0034": {
+    "title": "Open Code Review",
+    "text": "Alibaba open-sourced the code reviewer it ran internally for two years, and the design choice is to give the model less to do. Deterministic engineering around a smaller LLM job, reported at higher precision on a fraction of the tokens. Our read."
+  },
+  "0035": {
+    "title": "img2threejs",
+    "text": "img2threejs rebuilds the object in a reference image as TypeScript source instead of a mesh file, and gates every build pass on a real render plus a vision review. The refusal to let a pass advance is the interesting engineering. Our read."
+  },
+  "0036": {
+    "title": "open-connector",
+    "text": "open-connector is a self-hostable auth gateway that lets an agent use a connected account without ever holding the credential. If you are giving agents access to real SaaS accounts, this is the boundary worth copying. Our read."
+  },
+  "0037": {
+    "title": "video-shotcraft",
+    "text": "video-shotcraft hands the agent a catalogue of shot cards and a validated Remotion template instead of a video model, so the promo ships as editable code. Structure beats one-shot generation the moment you need a second version. Our read."
+  },
+  "0038": {
+    "title": "no-ai-slop",
+    "text": "no-ai-slop names 20 or more patterns that make writing read as machine-written, edits against them, then grades its own edit. The naming is the transferable part, whether or not you install the skill. Our read."
+  },
+  "0039": {
+    "title": "PenEcho",
+    "text": "PenEcho makes handwriting, equations, and diagrams the prompt, and drives your Claude Code or Codex CLI directly so answers land beside your marks. A different bet on what the interface for thinking with a model should be. Our read."
+  }
+}
