@@ -222,5 +222,125 @@
       "llm",
       "programming"
     ]
+  },
+  {
+    "slug": "ai-vendor-security-questionnaire",
+    "title": "AI Vendor Security Questionnaire",
+    "summary": "The questions to ask an AI vendor before you sign: where your data goes, whether it trains a model, retention and deletion, tenancy, incident terms, and how you leave.",
+    "url": "https://www.agentpalisade.com/resources/ai-vendor-security-questionnaire",
+    "read_time": 7,
+    "key_points": [
+      "Ask for these documents first",
+      "Trace where our data actually goes",
+      "Training use, retention, and deletion",
+      "Isolation and access control",
+      "Incidents, exit, and contract terms"
+    ],
+    "tags": [
+      "ai",
+      "security",
+      "business",
+      "saas"
+    ]
+  },
+  {
+    "slug": "ai-incident-response-playbook",
+    "title": "AI Incident Response Playbook",
+    "summary": "What to do in the first hours after an AI system leaks data, takes a destructive action, or gets prompt-injected: contain it, save the evidence, decide who to tell.",
+    "url": "https://www.agentpalisade.com/resources/ai-incident-response-playbook",
+    "read_time": 6,
+    "key_points": [
+      "First hour: triage",
+      "Contain the system",
+      "Preserve the evidence",
+      "Decide and notify",
+      "Post-incident review"
+    ],
+    "tags": [
+      "ai",
+      "security",
+      "incidentresponse",
+      "business"
+    ]
+  },
+  {
+    "slug": "shadow-ai-employee-use-guide",
+    "title": "Shadow AI: Finding and Fixing Unapproved AI Use",
+    "summary": "How to find the AI tools your team is already using, sort them by what data they touch, and give people a sanctioned option fast enough that they take it.",
+    "url": "https://www.agentpalisade.com/resources/shadow-ai-employee-use-guide",
+    "read_time": 7,
+    "key_points": [
+      "Open the amnesty conversation",
+      "Find what is actually in use",
+      "Triage every tool you find",
+      "Write the one-page rule",
+      "Make the approved path the fast path"
+    ],
+    "tags": [
+      "ai",
+      "security",
+      "business",
+      "productivity"
+    ]
+  },
+  {
+    "slug": "ai-data-retention-checklist",
+    "title": "AI Data Retention and Privacy Checklist",
+    "summary": "What actually happens to data you put into AI tools: consumer versus business terms, training opt-out versus retention, the copies in your own stack, and what deletion really reaches.",
+    "url": "https://www.agentpalisade.com/resources/ai-data-retention-checklist",
+    "read_time": 6,
+    "key_points": [
+      "Confirm which agreement you are actually on",
+      "Separate training, retention, and abuse monitoring",
+      "Inventory the copies you create",
+      "Make deletion verifiable",
+      "Check subprocessors and residency"
+    ],
+    "tags": [
+      "ai",
+      "security",
+      "privacy",
+      "business"
+    ]
+  },
+  {
+    "slug": "hosted-vs-self-hosted-ai-guide",
+    "title": "Hosted or Self-Hosted AI: How to Decide",
+    "summary": "A practical way to decide between a hosted AI API, a hosted enterprise tier with contractual data protections, and open-weight models on your own infrastructure.",
+    "url": "https://www.agentpalisade.com/resources/hosted-vs-self-hosted-ai-guide",
+    "read_time": 8,
+    "key_points": [
+      "Pin down the actual requirement",
+      "Test the hosted enterprise option first",
+      "Measure your real volume and latency",
+      "Cost the self-hosted option end to end",
+      "Design the split if you go hybrid"
+    ],
+    "tags": [
+      "ai",
+      "architecture",
+      "business",
+      "llm"
+    ]
+  },
+  {
+    "slug": "ai-feature-acceptance-testing-guide",
+    "title": "How to Accept an AI Feature You Paid For",
+    "summary": "How to sign off on a nondeterministic feature: build an evaluation set from your own real cases, set the bar before you see the number, and price the errors instead of counting them.",
+    "url": "https://www.agentpalisade.com/resources/ai-feature-acceptance-testing-guide",
+    "read_time": 7,
+    "key_points": [
+      "Build the evaluation set",
+      "Set the bar before you look at the result",
+      "Run the acceptance test",
+      "Test refusal, escalation, and hostile input",
+      "Contract for quality after go-live"
+    ],
+    "tags": [
+      "ai",
+      "testing",
+      "business",
+      "productivity"
+    ]
   }
 ]
