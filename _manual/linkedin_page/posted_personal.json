@@ -12,7 +12,20 @@
         "0010",
         "0011",
         "0012",
-        "0013"
+        "0013",
+        "0014",
+        "0015",
+        "0016",
+        "0017",
+        "0018",
+        "0019",
+        "0020",
+        "0021",
+        "0022",
+        "0023",
+        "0024",
+        "0025",
+        "0026"
     ],
     "history": [
         {
@@ -87,6 +100,81 @@
             "at": "2026-07-26T18:21:04-04:00",
             "kind": "article",
             "title": "claude-real-video: feeding an LLM the frames that actually matter"
+        },
+        {
+            "prefix": "0014",
+            "at": "2026-07-27T17:02:38-04:00",
+            "kind": "article",
+            "title": "Agent Apprenticeship turns finished agent tasks into reusable experience"
+        },
+        {
+            "prefix": "0015",
+            "at": "2026-07-28T17:02:55-04:00",
+            "kind": "article",
+            "title": "gzh-design-skill: typesetting for WeChat by constraint, not by prompt"
+        },
+        {
+            "prefix": "0016",
+            "at": "2026-07-29T17:02:21-04:00",
+            "kind": "article",
+            "title": "Apple's coreai-models ships agent skills next to its on-device model recipes"
+        },
+        {
+            "prefix": "0017",
+            "at": "2026-08-05T05:39:01+08:00",
+            "note": "found on profile"
+        },
+        {
+            "prefix": "0018",
+            "at": "2026-08-06T05:07:29+08:00",
+            "kind": "article",
+            "title": "local-llm: A Field Report on Running SOTA Models on Your Own Hardware"
+        },
+        {
+            "prefix": "0019",
+            "at": "2026-08-10T10:08:51+08:00",
+            "note": "found on profile"
+        },
+        {
+            "prefix": "0020",
+            "at": "2026-08-18T11:51:32+08:00",
+            "kind": "article",
+            "title": "DeepSeek-Reasonix: a terminal coding agent engineered around the prefix cache"
+        },
+        {
+            "prefix": "0021",
+            "at": "2026-08-20T19:53:51+05:00",
+            "kind": "article",
+            "title": "Open Design makes your coding agent the design engine and exports real files"
+        },
+        {
+            "prefix": "0022",
+            "at": "2026-09-01T23:59:27-04:00",
+            "kind": "article",
+            "title": "Browser Harness hands the LLM a websocket to Chrome and lets it write the rest"
+        },
+        {
+            "prefix": "0023",
+            "at": "2026-09-07T14:35:43+02:00",
+            "note": "found on profile"
+        },
+        {
+            "prefix": "0024",
+            "at": "2026-09-08T16:28:34+03:00",
+            "kind": "article",
+            "title": "Terax packs a terminal, editor, git graph, and an AI agent into an 8 MB binary"
+        },
+        {
+            "prefix": "0025",
+            "at": "2026-09-09T01:35:23+03:00",
+            "kind": "article",
+            "title": "How FreeLLMAPI turns 18 free LLM tiers into one OpenAI-compatible API"
+        },
+        {
+            "prefix": "0026",
+            "at": "2026-09-11T11:22:46+02:00",
+            "kind": "article",
+            "title": "SkillOpt trains a markdown skill file like a neural network, with a validation gate"
         }
     ]
 }

@@ -40,3 +40,15 @@ Thumbs.db
 # codex daily-run transcripts (local noise, not source)
 _manual/linkedin_page/codex_stdout.txt
 _manual/linkedin_page/codex_stderr.txt
+
+# LinkedIn lanes: runtime output and caches stay on this machine. The repo is public, and
+# none of these is state a fresh checkout needs. posted*.json and queue.json are the
+# de-dupe state and stay tracked.
+_manual/linkedin_page/*_log.txt
+_manual/linkedin_page/codex_last_message.txt
+# rebuilt every run by article_cdp.py refresh_map() from the profile's /pulse/ links
+_manual/linkedin_page/articles_map.json
+_manual/linkedin_page/.covers/
+_manual/linkedin_page/*.bak
+# per-run audit screenshots (the 10 from July are already tracked and stay tracked)
+_manual/linkedin_page/shots/*.png

@@ -151,5 +151,179 @@
     "title": "Terax",
     "url": "https://dev.to/renolu/terax-packs-a-terminal-editor-git-graph-and-an-ai-agent-into-an-8-mb-binary-40ih",
     "text": "Terax bundles a terminal, editor, git graph, web preview, and an agent panel into a roughly 8 MB binary that runs on your own API keys or local models, with no account and no telemetry. Our read."
+  },
+  {
+    "prefix": "0025",
+    "title": "FreeLLMAPI",
+    "url": "https://dev.to/renolu/how-freellmapi-turns-18-free-llm-tiers-into-one-openai-compatible-api-13fm",
+    "text": "FreeLLMAPI puts the free tiers of 18 providers behind one OpenAI-compatible endpoint, with per-key rate tracking and failover to keep requests under quota. Handy for prototypes, and a useful look at what happens when free tiers become infrastructure. Our read."
+  },
+  {
+    "prefix": "0026",
+    "title": "SkillOpt",
+    "url": "https://dev.to/renolu/skillopt-trains-a-markdown-skill-file-like-a-neural-network-with-a-validation-gate-m14",
+    "text": "SkillOpt treats a single skill document as trainable state, editing it through validation-gated updates until a frozen model performs better. The winner ships as one compact file and costs nothing extra at inference time. Our read."
+  },
+  {
+    "prefix": "0027",
+    "title": "garden-skills",
+    "url": "https://dev.to/renolu/garden-skills-packages-taste-and-process-for-ai-coding-agents-jca",
+    "text": "garden-skills hard-codes taste into agent skills: a five-dial design read, 25 named style recipes, and workflows gated at checkpoints. Opinionated defaults beat asking a model to have opinions. Our read."
+  },
+  {
+    "prefix": "0028",
+    "title": "awesome-gpt-image-2",
+    "url": "https://dev.to/renolu/awesome-gpt-image-2-a-prompt-library-where-each-entry-is-structured-json-with-its-source-attached-4n64",
+    "text": "A prompt library where every entry is a structured JSON blueprint with its author and source attached, rather than a wall of copyable text. The schema and the attribution are what make a collection this size maintainable. Our read."
+  },
+  {
+    "prefix": "0029",
+    "title": "text-to-cad",
+    "url": "https://dev.to/renolu/text-to-cad-ships-cad-agent-skills-that-run-from-a-prompt-to-a-bambu-lab-print-3nf",
+    "text": "text-to-cad turns a coding agent into a CAD engineer, carrying a plain-language request through STEP, DXF, slicing, and a deliberately cautious printer start. Eleven skills, and the caution at the end is the part worth studying. Our read."
+  },
+  {
+    "prefix": "0030",
+    "title": "academic-research-skills-codex",
+    "url": "https://dev.to/renolu/how-academic-research-skills-codex-ports-a-claude-code-suite-to-codex-107e",
+    "text": "This project repackages a Claude Code research suite so Codex runs the same five human-in-the-loop workflows, pinned to a specific upstream commit. A small lesson in porting skills without forking the intent. Our read."
+  },
+  {
+    "prefix": "0031",
+    "title": "HTML Anything",
+    "url": "https://dev.to/renolu/html-anything-makes-the-coding-cli-you-already-run-write-your-html-15h6",
+    "text": "HTML Anything ships no model and no API key. It detects the coding CLI you already logged into and drives that to turn notes into ship-ready single-file HTML. Our read on why the no-key pattern keeps showing up."
+  },
+  {
+    "prefix": "0032",
+    "title": "Kun",
+    "url": "https://dev.to/renolu/kun-bets-requirements-first-coding-only-works-if-the-models-stay-cheap-3h54",
+    "text": "Kun starts from a written requirement rather than a prompt, threading design, plans, code, and review into one workspace, and defaults to low-cost providers so the extra rounds stay affordable. Requirements-first only works if the model bill allows it. Our read."
+  },
+  {
+    "prefix": "0033",
+    "title": "PixelRAG",
+    "url": "https://dev.to/renolu/pixelrag-retrieves-over-page-screenshots-instead-of-parsed-text-42gp",
+    "text": "PixelRAG skips text parsing and retrieves over page screenshots with a vision embedder, so tables, charts, and layout survive. In document-heavy retrieval, the parse step is usually where the meaning goes missing. Our read."
+  },
+  {
+    "prefix": "0034",
+    "title": "Open Code Review",
+    "url": "https://dev.to/renolu/open-code-review-alibabas-ai-reviewer-that-hands-the-llm-less-work-cji",
+    "text": "Alibaba open-sourced the code reviewer it ran internally for two years, and the design choice is to give the model less to do. Deterministic engineering around a smaller LLM job, reported at higher precision on a fraction of the tokens. Our read."
+  },
+  {
+    "prefix": "0035",
+    "title": "img2threejs",
+    "url": "https://dev.to/renolu/img2threejs-rebuilds-the-object-in-a-reference-image-as-code-not-a-mesh-file-11n4",
+    "text": "img2threejs rebuilds the object in a reference image as TypeScript source instead of a mesh file, and gates every build pass on a real render plus a vision review. The refusal to let a pass advance is the interesting engineering. Our read."
+  },
+  {
+    "prefix": "0036",
+    "title": "open-connector",
+    "url": "https://dev.to/renolu/open-connector-keeps-the-credential-out-of-the-agent-process-3dd1",
+    "text": "open-connector is a self-hostable auth gateway that lets an agent use a connected account without ever holding the credential. If you are giving agents access to real SaaS accounts, this is the boundary worth copying. Our read."
+  },
+  {
+    "prefix": "0037",
+    "title": "video-shotcraft",
+    "url": "https://dev.to/renolu/video-shotcraft-hands-your-agent-shot-cards-not-a-video-model-24im",
+    "text": "video-shotcraft hands the agent a catalogue of shot cards and a validated Remotion template instead of a video model, so the promo ships as editable code. Structure beats one-shot generation the moment you need a second version. Our read."
+  },
+  {
+    "prefix": "0038",
+    "title": "no-ai-slop",
+    "url": "https://dev.to/renolu/no-ai-slop-names-the-patterns-that-make-writing-sound-automatic-3hom",
+    "text": "no-ai-slop names 20 or more patterns that make writing read as machine-written, edits against them, then grades its own edit. The naming is the transferable part, whether or not you install the skill. Our read."
+  },
+  {
+    "prefix": "0039",
+    "title": "PenEcho",
+    "url": "https://dev.to/renolu/penecho-puts-the-ai-on-a-canvas-and-runs-it-off-your-cli-login-336d",
+    "text": "PenEcho makes handwriting, equations, and diagrams the prompt, and drives your Claude Code or Codex CLI directly so answers land beside your marks. A different bet on what the interface for thinking with a model should be. Our read."
+  },
+  {
+    "prefix": "0040",
+    "title": "DeepSeek Harness Puts Its Breaking-Chang",
+    "url": "https://dev.to/renolu/deepseek-harness-puts-its-breaking-changes-warning-before-the-install-steps-1gai",
+    "text": "DeepSeek Harness (dsh) is an MIT-licensed agent harness where everything is a plugin, built on Cordis, and its README reads as a pitch to plugin authors during a volatile developer preview Our read."
+  },
+  {
+    "prefix": "0041",
+    "title": "The Proxy That Documents Its Own Memory",
+    "url": "https://dev.to/renolu/the-proxy-that-documents-its-own-memory-7ba",
+    "text": "opencodex points Codex, Claude Code, Claude Desktop, and Grok Build at any LLM you like, but the sharper lesson is how it bounds the state a long-running local proxy accumulates Our read."
+  },
+  {
+    "prefix": "0042",
+    "title": "OpenAI's Security Scanner Is Built Aroun",
+    "url": "https://dev.to/renolu/openais-security-scanner-is-built-around-the-findings-it-cannot-confirm-2e6e",
+    "text": "The codex-security CLI spends most of its surface on finding lifecycle, credential handling, and redaction rather than detection claims, including a scan-comparison state for findings it refuses to call resolved Our read."
+  },
+  {
+    "prefix": "0043",
+    "title": "qm Gives Every Employee Their Own Agent ",
+    "url": "https://dev.to/renolu/qm-gives-every-employee-their-own-agent-sandbox-instead-of-one-shared-brain-42i3",
+    "text": "qm scopes memory, keychain, permissions, and a durable sandbox to each person and each room, so a company agent stops being one shared brain Our read."
+  },
+  {
+    "prefix": "0044",
+    "title": "Graft's real claim isn't speed, it's the",
+    "url": "https://dev.to/renolu/grafts-real-claim-isnt-speed-its-the-files-your-agent-never-opened-4f36",
+    "text": "NanoNets' Graft writes a linked markdown code graph into your repo so coding agents skip rediscovery, and its SWE-bench numbers point at a sharper problem than slow greps Our read."
+  },
+  {
+    "prefix": "0045",
+    "title": "The Codex Config Tool That Is Really Abo",
+    "url": "https://dev.to/renolu/the-codex-config-tool-that-is-really-about-undoing-itself-3g4b",
+    "text": "codex-keysmith deploys one Markdown instruction file into your Codex config directory and builds its CLI around undoing that write, with ownership manifests, layered uninstall, hook isolation, and a stated limit on rollback Our read."
+  },
+  {
+    "prefix": "0046",
+    "title": "The CRM Where No Tool Accepts a Confiden",
+    "url": "https://dev.to/renolu/the-crm-where-no-tool-accepts-a-confidence-score-221a",
+    "text": "An open source CRM built so the agent owns the work queue, and no tool it calls can report certainty, only observed evidence Our read."
+  },
+  {
+    "prefix": "0047",
+    "title": "A 2.78T Model in 8 GB of RAM, and the Ga",
+    "url": "https://dev.to/renolu/a-278t-model-in-8-gb-of-ram-and-the-gate-moves-to-the-disk-50nj",
+    "text": "kimi-k3-in-c runs a 2.78-trillion-parameter Kimi K3 on one CPU in 8.24 GB of RAM, with byte-identical output from 8 GB up to 224 GB, so memory buys speed rather than eligibility Our read."
+  },
+  {
+    "prefix": "0048",
+    "title": "The Memory Budget Came First: How TurboF",
+    "url": "https://dev.to/renolu/the-memory-budget-came-first-how-turbofieldfare-fits-a-26b-model-in-2-gb-1i2l",
+    "text": "TurboFieldfare sets a ~2 GB memory budget first and then rebuilds the Gemma 4 26B-A4B runtime, its per-layer expert cache, and even the installer to live inside it on an 8 GB Mac Our read."
+  },
+  {
+    "prefix": "0049",
+    "title": "GenOffice bets that file fidelity, not t",
+    "url": "https://dev.to/renolu/genoffice-bets-that-file-fidelity-not-the-ai-panel-is-the-hard-part-2j19",
+    "text": "An Apache-2.0 desktop office suite whose real engineering is byte-preserving .docx patching, a Rust .xlsx sidecar, and PDF text editing through PDFium wasm, with the AI agents riding on top Our read."
+  },
+  {
+    "prefix": "0050",
+    "title": "Anchoring Is a Wiring Problem: Inside AD",
+    "url": "https://dev.to/renolu/anchoring-is-a-wiring-problem-inside-adhds-isolated-reasoning-frames-3dj6",
+    "text": "ADHD is a coding-agent skill that fans out isolated reasoning processes under distorted cognitive frames, then runs a separate critic pass to score, prune traps, and deepen survivors Our read."
+  },
+  {
+    "prefix": "0051",
+    "title": "LazyCodex Bets That Installation Is the ",
+    "url": "https://dev.to/renolu/lazycodex-bets-that-installation-is-the-hard-part-of-an-agent-harness-h48",
+    "text": "LazyCodex keeps its actual engine in a submodule and spends the repo on install, a doctor health report, hook approval, and an uninstall that names the config sections it owns Our read."
+  },
+  {
+    "prefix": "0052",
+    "title": "LoopX Holds the State Your Agent Harness",
+    "url": "https://dev.to/renolu/loopx-holds-the-state-your-agent-harness-forgets-396d",
+    "text": "LoopX is a provider-neutral state kernel sitting above Codex, Claude Code, or Cursor, holding objectives, gates, evidence, and quota so multi-day agent work survives the gaps between bounded turns Our read."
+  },
+  {
+    "prefix": "0053",
+    "title": "OpenKnowledge points your editor and you",
+    "url": "https://dev.to/renolu/openknowledge-points-your-editor-and-your-agents-at-the-same-folder-mh4",
+    "text": "OpenKnowledge opens any existing markdown folder in a WYSIWYG editor and wires detected agent harnesses to the same files over MCP, so there is no import step and no second copy to reconcile Our read."
   }
 ]
