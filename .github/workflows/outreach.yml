@@ -42,11 +42,11 @@ jobs:
       # health looks clean, then raise via this Variable. Bounds both actions and
       # (paid) model calls per run.
       OUTREACH_CAP_SCALE: ${{ vars.OUTREACH_CAP_SCALE || '0.5' }}
-      # Cost guard: a dry_run dispatch uses the free mock provider (no credit);
-      # live (scheduled or dispatched) uses the paid model for real replies. Reply
-      # count per run is bounded by the per-platform reply cap.
-      AI_PROVIDER: ${{ github.event.inputs.mode == 'dry_run' && 'mock' || 'anthropic' }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # No model API in CI (2026-10-18): replies were the only model call, so they
+      # are off and the provider is pinned to the free mock. Likes and follows
+      # still run. Replies, if wanted, get authored locally by Claude Code.
+      AI_PROVIDER: mock
+      OUTREACH_REPLY_RATIO: "0"
       DB_PATH: "data/outreach.sqlite3"
       BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
       BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}

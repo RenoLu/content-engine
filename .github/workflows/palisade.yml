@@ -1,9 +1,10 @@
 name: Daily DEV.to syndication (Agent Palisade)
 
 on:
-  schedule:
-    # 12:00 UTC daily = 8am EDT / 7am EST — before the US-morning DEV.to wave.
-    - cron: "0 12 * * *"
+  # Schedule removed 2026-10-18. This job bills the Anthropic API (the model runs
+  # in CI), which breaks the rule that Claude Code authors content locally and CI
+  # only publishes. Guide adaptations should be authored locally and published
+  # without a model, like the trending queue. Manual dispatch only until then.
   workflow_dispatch:
 
 permissions:
