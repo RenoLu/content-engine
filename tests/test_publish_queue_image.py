@@ -30,20 +30,17 @@ def test_committed_image_url_is_preferred():
     assert "T" in img.alt
 
 
-def test_falls_back_to_pollinations_from_prompt():
+def test_no_committed_cover_means_no_image():
     s = _settings()
     data = {"title": "T", "summary": "s", "image_prompt": "a robot reading a bug report"}
-    img = publish_queue._build_image(data, s)
-    assert img is not None
-    assert "image.pollinations.ai" in img.url
+    assert publish_queue._build_image(data, s) is None
 
 
-def test_derives_prompt_when_none_given():
+def test_pollinations_url_is_rejected():
     s = _settings()
-    data = {"title": "Some Article", "summary": "what it is about"}
-    img = publish_queue._build_image(data, s)
-    assert img is not None
-    assert "image.pollinations.ai" in img.url
+    data = {"title": "T", "summary": "s",
+            "image_url": "https://image.pollinations.ai/prompt/x?width=1280"}
+    assert publish_queue._build_image(data, s) is None
 
 
 def test_disabled_by_post_image_false():

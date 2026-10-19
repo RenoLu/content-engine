@@ -26,6 +26,7 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 QUEUE = HERE / "queue"
+PUBLISHED = HERE / "published"
 ASSETS = HERE.parent / "assets" / "posts"
 RAW = "https://raw.githubusercontent.com/RenoLu/content-engine/main/assets/posts/"
 BASE = "http://127.0.0.1:10086/command"
@@ -156,17 +157,21 @@ def main() -> None:
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     do_all = "--all" in sys.argv
     items = []
-    for f in sorted(QUEUE.glob("*.json")):
+    pool = sorted(QUEUE.glob("*.json"))
+    if args:  # explicit prefixes may also name already-published items
+        pool += sorted(PUBLISHED.glob("*.json"))
+    for f in pool:
         prefix = f.stem.split("-")[0]
         if args and prefix not in args:
             continue
-        if do_all and (ASSETS / f"{f.stem}.jpg").exists():
-            continue
+        if (ASSETS / f"{f.stem}.jpg").exists():
+            continue  # already has a ChatGPT cover
         items.append(f)
     if not items:
         print("nothing to generate")
         return
 
+    fails = 0
     for f in items:
         item = json.loads(f.read_text(encoding="utf-8"))
         subject = (item.get("image_prompt") or "").strip()
@@ -179,8 +184,13 @@ def main() -> None:
         send_prompt(prompt)
         url = wait_for_image()
         if not url:
+            fails += 1
             print(f"  FAILED {f.stem}: no image appeared")
+            if fails >= 2:
+                print("  stopping: 2 failures in a row (likely the ChatGPT image cap)")
+                break
             continue
+        fails = 0
         data = pull_bytes(url)
         dest = ASSETS / f"{f.stem}.jpg"
         size = to_jpg(data, dest)

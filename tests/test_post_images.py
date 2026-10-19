@@ -32,10 +32,15 @@ def test_build_url_is_deterministic_and_parametrized():
     assert "no%20text" in u1.lower() or "no+text" in u1.lower() or "no%2c%20text" in u1.lower()
 
 
-def test_generate_returns_none_for_empty_prompt():
+def test_generate_is_disabled():
+    # Pollinations is banned (2026-10-19): generate never returns an image.
     assert imagegen.generate("   ") is None
-    a = imagegen.generate("prototype hardening into production", alt="alt text")
-    assert isinstance(a, ImageAsset) and a.alt == "alt text" and a.url
+    assert imagegen.generate("prototype hardening into production", alt="alt text") is None
+
+
+def _asset(alt: str = "") -> ImageAsset:
+    return ImageAsset(url="https://raw.githubusercontent.com/RenoLu/content-engine/main/assets/posts/x.jpg",
+                      alt=alt or "subject")
 
 
 def test_ensure_data_fetches_and_caches():
@@ -44,7 +49,7 @@ def test_ensure_data_fetches_and_caches():
         calls["n"] += 1
         return httpx.Response(200, content=_JPEG, headers={"content-type": "image/jpeg"})
     client = httpx.Client(transport=httpx.MockTransport(handler))
-    a = imagegen.generate("x subject")
+    a = _asset()
     assert a.ensure_data(client) == _JPEG
     assert a.ensure_data(client) == _JPEG          # cached, no second fetch
     assert calls["n"] == 1
@@ -54,7 +59,7 @@ def test_ensure_data_gives_up_gracefully():
     def handler(req):
         return httpx.Response(500, text="boom")
     client = httpx.Client(transport=httpx.MockTransport(handler))
-    a = imagegen.generate("y subject")
+    a = _asset()
     assert a.ensure_data(client) is None
 
 
@@ -63,7 +68,7 @@ def test_ensure_data_gives_up_gracefully():
 # --------------------------------------------------------------------------- #
 def test_devto_payload_sets_main_image(settings):
     post = _post()
-    post.image = imagegen.generate("subject")
+    post.image = _asset()
     payload = DevToPublisher(settings).render_payload(post)
     assert payload["article"]["main_image"] == post.image.url
 
@@ -80,7 +85,7 @@ def test_bluesky_uploads_blob_and_embeds(settings):
     seen = {"blob": False, "embed": None}
     def handler(req: httpx.Request) -> httpx.Response:
         p = req.url.path
-        if req.url.host == "image.pollinations.ai":
+        if req.url.host == "raw.githubusercontent.com":
             return httpx.Response(200, content=_JPEG, headers={"content-type": "image/jpeg"})
         if p.endswith("createSession"):
             return httpx.Response(200, json={"accessJwt": "jwt", "did": "did:plc:abc"})
@@ -95,7 +100,7 @@ def test_bluesky_uploads_blob_and_embeds(settings):
 
     env = {**settings.env, "BLUESKY_HANDLE": "h.bsky.social", "BLUESKY_APP_PASSWORD": "pw"}
     s = dataclasses.replace(settings, env=env)
-    post = _post(); post.image = imagegen.generate("subject", alt="an alt")
+    post = _post(); post.image = _asset("an alt")
     client = httpx.Client(transport=httpx.MockTransport(handler))
     res = BlueskyPublisher(s, http_client=client).publish(post, dry_run=False)
     assert res.status == "published"
@@ -106,7 +111,7 @@ def test_bluesky_uploads_blob_and_embeds(settings):
 
 def test_bluesky_ships_text_only_when_image_fetch_fails(settings):
     def handler(req: httpx.Request) -> httpx.Response:
-        if req.url.host == "image.pollinations.ai":
+        if req.url.host == "raw.githubusercontent.com":
             return httpx.Response(500)                 # image unavailable
         p = req.url.path
         if p.endswith("createSession"):
@@ -118,7 +123,7 @@ def test_bluesky_ships_text_only_when_image_fetch_fails(settings):
         return httpx.Response(404)
     env = {**settings.env, "BLUESKY_HANDLE": "h.bsky.social", "BLUESKY_APP_PASSWORD": "pw"}
     s = dataclasses.replace(settings, env=env)
-    post = _post(); post.image = imagegen.generate("subject")
+    post = _post(); post.image = _asset()
     client = httpx.Client(transport=httpx.MockTransport(handler))
     res = BlueskyPublisher(s, http_client=client).publish(post, dry_run=False)
     assert res.status == "published"                   # still shipped
@@ -130,7 +135,7 @@ def test_bluesky_ships_text_only_when_image_fetch_fails(settings):
 def test_mastodon_uploads_media_and_attaches(settings):
     seen = {"media_ids": None}
     def handler(req: httpx.Request) -> httpx.Response:
-        if req.url.host == "image.pollinations.ai":
+        if req.url.host == "raw.githubusercontent.com":
             return httpx.Response(200, content=_JPEG, headers={"content-type": "image/jpeg"})
         p = req.url.path
         if p.endswith("/api/v2/media"):
@@ -142,7 +147,7 @@ def test_mastodon_uploads_media_and_attaches(settings):
         return httpx.Response(404)
     env = {**settings.env, "MASTODON_BASE_URL": "https://m.social", "MASTODON_ACCESS_TOKEN": "tok"}
     s = dataclasses.replace(settings, env=env)
-    post = _post(); post.image = imagegen.generate("subject")
+    post = _post(); post.image = _asset()
     client = httpx.Client(transport=httpx.MockTransport(handler))
     res = MastodonPublisher(s, http_client=client).publish(post, dry_run=False)
     assert res.status == "published"

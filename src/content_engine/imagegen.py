@@ -1,4 +1,8 @@
-"""Article image generation via Pollinations (free, no API key, CI-safe).
+"""DISABLED: never generate images with Pollinations (owner's rule, 2026-10-19).
+
+Kept only so imports keep working. Original notes follow.
+
+Article image generation via Pollinations (free, no API key, CI-safe).
 
 Pollinations serves Flux-generated images at a deterministic URL built from the
 prompt, so the URL itself is a stable public image (usable directly as a DEV.to
@@ -41,9 +45,8 @@ def build_image_url(prompt: str, *, width: int = 1280, height: int = 720,
 
 def generate(prompt: str, *, alt: str = "", width: int = 1280, height: int = 720,
              model: str = "flux") -> ImageAsset | None:
-    """Build an ImageAsset for the given article-specific prompt (no network yet;
-    bytes are fetched lazily by publishers that need them)."""
-    if not prompt or not prompt.strip():
-        return None
-    url = build_image_url(prompt, width=width, height=height, model=model)
-    return ImageAsset(url=url, alt=alt.strip() or prompt.strip()[:280])
+    """Disabled. Pollinations output is off-style and must never be published
+    (owner's rule, 2026-10-19). Covers are made in the ChatGPT web UI through Kimi
+    (_manual/make_covers_chatgpt.py) and attached as a committed ``image_url``.
+    Always returns None so no code path can fall back to a Pollinations image."""
+    return None

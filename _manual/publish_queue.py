@@ -31,25 +31,17 @@ def _queue_files() -> list[Path]:
 
 
 def _build_image(data: dict, s) -> "ImageAsset | None":
-    """Article image for a queued item, attached at publish time so the GitHub
-    Action's posts carry a cover/embed. Prefers a committed ``image_url`` (a
-    pre-generated asset hosted in-repo, most reliable in CI); otherwise builds a
-    Pollinations image from the item's ``image_prompt`` (or one derived from the
-    title/summary). Disabled with POST_IMAGE=false. No network here — publishers
-    fetch the bytes lazily only when they need them (Bluesky blob, Mastodon media)."""
+    """The item's committed ChatGPT cover (``image_url``), or None.
+
+    Never generates an image here: Pollinations is banned (2026-10-19) and the
+    ChatGPT covers can only be made locally through the browser. Disabled with
+    POST_IMAGE=false."""
     if s.get_env("POST_IMAGE", "true").lower() != "true":
         return None
-    title = data.get("title", "")
     url = (data.get("image_url") or "").strip()
-    if url:
-        return ImageAsset(url=url, alt=f"Illustration for: {title}")
-    prompt = (data.get("image_prompt") or "").strip()
-    if not prompt:
-        prompt = (f"An illustration for an article titled \"{title}\". "
-                  f"{data.get('summary', '')}").strip()
-    w = int(s.get_env("POST_IMAGE_WIDTH", "1280") or 1280)
-    h = int(s.get_env("POST_IMAGE_HEIGHT", "720") or 720)
-    return imagegen.generate(prompt, alt=f"Illustration for: {title}", width=w, height=h)
+    if not url or "pollinations" in url:
+        return None
+    return ImageAsset(url=url, alt=f"Illustration for: {data.get('title', '')}")
 
 
 def main() -> int:
@@ -64,6 +56,14 @@ def main() -> int:
 
     item = files[0]
     data = json.loads(item.read_text(encoding="utf-8"))
+    if (live and s.get_env("POST_IMAGE", "true").lower() == "true"
+            and _build_image(data, s) is None):
+        # Hold rather than publish without a cover. Exit non-zero so the run goes
+        # red instead of looking healthy; generate the cover locally to unblock.
+        print(json.dumps({"status": "waiting_for_cover", "mode": mode,
+                          "queue_item": item.name,
+                          "fix": "python _manual/make_covers_chatgpt.py " + item.stem.split("-")[0]}))
+        return 1
     post = Post(
         title=data["title"],
         body_markdown=data["body_markdown"],

@@ -573,32 +573,40 @@ def stamp() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
-def cover_for(prefix: str, art: dict | None = None) -> Path:
-    """Local asset first, then whatever image_url the published article recorded.
+def _fetch_cover(prefix: str, url: str, source: str) -> Path | None:
+    CACHE.mkdir(exist_ok=True)
+    dest = CACHE / f"{prefix}.jpg"
+    if dest.exists() and dest.stat().st_size > 1000:
+        return dest
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "content-engine/linkedin"})
+        with urllib.request.urlopen(req, timeout=90) as r:
+            data = r.read()
+        if len(data) > 1000:
+            dest.write_bytes(data)
+            log(f"  fetched cover for {prefix} from {source} ({len(data)} bytes)")
+            return dest
+        log(f"  cover download for {prefix} from {source} was {len(data)} bytes, ignoring")
+    except Exception as exc:
+        log(f"  cover download failed for {prefix} from {source}: {exc}")
+    return None
 
-    Newer pieces get their cover generated at publish time (Pollinations) rather than
-    committed as a jpg, so image_url is the only copy that exists.
+
+def cover_for(prefix: str, art: dict | None = None) -> Path:
+    """The ChatGPT-made cover: a committed asset first, then the item's image_url.
+
+    Pollinations images are banned (2026-10-19), so a Pollinations image_url is
+    ignored and DEV.to covers are never copied (most of those are Pollinations).
+    Generate a missing cover with _manual/make_covers_chatgpt.py.
     """
     hits = sorted(ASSETS.glob(f"{prefix}-*.jpg")) + sorted(ASSETS.glob(f"{prefix}-*.png"))
     if hits:
         return hits[0]
     url = (art or {}).get("image_url") or ""
-    if url.startswith("http"):
-        CACHE.mkdir(exist_ok=True)
-        dest = CACHE / f"{prefix}.jpg"
-        if dest.exists() and dest.stat().st_size > 1000:
-            return dest
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "content-engine/linkedin"})
-            with urllib.request.urlopen(req, timeout=90) as r:
-                data = r.read()
-            if len(data) > 1000:
-                dest.write_bytes(data)
-                log(f"  fetched cover for {prefix} from image_url ({len(data)} bytes)")
-                return dest
-            log(f"  cover download for {prefix} was {len(data)} bytes, ignoring")
-        except Exception as exc:
-            log(f"  cover download failed for {prefix}: {exc}")
+    if url.startswith("http") and "pollinations" not in url:
+        got = _fetch_cover(prefix, url, "image_url")
+        if got:
+            return got
     return ASSETS / f"{prefix}-missing.jpg"
 
 
@@ -705,6 +713,11 @@ def post_next(max_n: int, dry: bool, from_published: bool = False) -> int:
                     {"prefix": prefix, "at": stamp(), "note": "found on profile"})
                 write_state(state)
                 continue
+
+            if not cover_for(prefix, art).exists():
+                # Hold: never publish an Article without its ChatGPT cover.
+                log(f"{prefix}: HOLD, no ChatGPT cover yet (run make_covers_chatgpt.py {prefix})")
+                break
 
             blocks = blocks_from_markdown(art["body_markdown"])
             log(f"{prefix}: composing {art['title'][:60]} ({len(blocks)} blocks)")
